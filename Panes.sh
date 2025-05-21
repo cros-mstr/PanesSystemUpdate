@@ -1,11 +1,12 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-
+UPDATE_TITLE="Panes OS 1.04 "Shimmer" "
+UPDATE_DESC="This Update finalizes Online System Grading. 10.4(0) is fresh from DTC."
 # Check if the script is running from a specific path
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.01
+VERSION=1.04
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
