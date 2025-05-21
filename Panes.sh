@@ -242,7 +242,7 @@ check_for_updates() {
                 cp -f -r BootFolder/PanesSystemUpdate/Panes.sh BootFolder  # Copy only Panes.sh
 
                 # Displaying a progress bar (again)
-                local total_steps=20 # Total number of steps to display progress
+                local total_steps=100 # Total number of steps to display progress
                 local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
                 for ((i=0; i<=total_steps; i++)); do
                     sleep "$step_duration"
@@ -253,7 +253,7 @@ check_for_updates() {
                     for ((j=i; j<total_steps; j++)); do
                         printf " "
                     done
-                    printf "] %d%%" "$((i * 10 / total_steps))"
+                    printf "] %d%%" "$((i * 100 / total_steps))"
                 done
                 cp -f -v PanesSystemUpdate/. BootFolder/ # Copy remaining files from cloned repo
                 echo -e "\n\nUnpacked. Cleaning and applying changes..."
