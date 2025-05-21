@@ -219,7 +219,7 @@ check_for_updates() {
             if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
                 echo "A new version ($REMOTE_VERSION) is available. Proceeding with update."
                 # Displaying a progress bar
-                local total_steps=1000/2 # Total number of steps to display progress
+                local total_steps=100/2 # Total number of steps to display progress
                 local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
                 for ((i=0; i<=total_steps; i++)); do
                     sleep "$step_duration"
@@ -261,7 +261,8 @@ check_for_updates() {
                 rm -rf PanesSystemUpdate
                 echo "Update applied successfully!"
                 echo "Reexecute Panes to experience v$REMOTE_VERSION"
-                exit
+                cd $PARENT_DIR
+                bash Panes.sh
             else
                 echo "You are already on the latest version ($LOCAL_VERSION)."
             fi
