@@ -59,7 +59,7 @@ draw_desktop() {
 get_signed_version
     clear
     echo "============================="
-    echo "|            Panes          |"
+    echo "|      Panes $VERSION       |"
     echo "|---------------------------|"
     echo "|  [1] Text Editor          |"
     echo "|  [2] Calculator           |"
@@ -67,7 +67,7 @@ get_signed_version
     echo "|  [4] Guessing Game        |"
     echo "|  [5] Animation            |"
     echo "|  [6] Check for Updates    |"
-    echo "|  [7] Reinstall Panes    |"
+    echo "|  [7] Reinstall Panes      |"
     echo "|  [8] Exit                 |"
     echo "============================="
     echo "Desktop"
