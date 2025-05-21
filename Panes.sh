@@ -187,6 +187,51 @@ check_for_updates() {
             LOCAL_VERSION="$VERSION" # Assuming VERSION is defined globally or in the calling script
 
             echo "Fetching remote version information..."
+                            # Displaying a progress bar
+                local total_steps=100/2 # Total number of steps to display progress
+                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps /100" | bc -l) # Duration of each step
+                for ((i=0; i<=total_steps; i++)); do
+                    sleep "$step_duration"
+                    printf "\rProgress: ["
+                    for ((j=0; j<i; j++)); do
+                        printf "#"
+                    done
+                    for ((j=i; j<total_steps; j++)); do
+                        printf " "
+                    done
+                    printf "] %d%%" "$((i * 100 / total_steps))"
+                done
+                sleep 1
+                            echo "Checking Eligibility..."
+                            # Displaying a progress bar
+                local total_steps=100/2 # Total number of steps to display progress
+                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps /100" | bc -l) # Duration of each step
+                for ((i=0; i<=total_steps; i++)); do
+                    sleep "$step_duration"
+                    printf "\rProgress: ["
+                    for ((j=0; j<i; j++)); do
+                        printf "#"
+                    done
+                    for ((j=i; j<total_steps; j++)); do
+                        printf " "
+                    done
+                    printf "] %d%%" "$((i * 100 / total_steps))"
+                done
+                echo "Requesting Update"
+                                            # Displaying a progress bar
+                local total_steps=100/2 # Total number of steps to display progress
+                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 100 / $total_steps/57" | bc -l) # Duration of each step
+                for ((i=0; i<=total_steps; i++)); do
+                    sleep "$step_duration"
+                    printf "\rProgress: ["
+                    for ((j=0; j<i; j++)); do
+                        printf "#"
+                    done
+                    for ((j=i; j<total_steps; j++)); do
+                        printf " "
+                    done
+                    printf "] %d%%" "$((i * 100 / total_steps))"
+                done
             rm -rf PanesSystemUpdate 
             # if it exists... it will cause errors
             # Download the remote Panes.sh temporarily to extract its version
