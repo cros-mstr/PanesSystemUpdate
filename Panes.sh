@@ -10,7 +10,7 @@ VERSION=1.04
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
-TOTAL_UPDATE_DURATION=1/3
+TOTAL_UPDATE_DURATION=1
 Berateur_url="https://github.com/cros-mstr/PanesUpdateAvailability/blob/e1f915424decca95f304a3fb946bea7fb6a762cb/VersionVerification"
 #Are we up to date?
 dater() {
