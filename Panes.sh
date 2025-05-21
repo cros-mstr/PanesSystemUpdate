@@ -260,7 +260,7 @@ check_for_updates() {
                 # Clean up the cloned repository
                 rm -rf PanesSystemUpdate
                 echo "Update applied successfully!"
-                echo "Reexecute Panes to experience v$VERSION"
+                echo "Reexecute Panes to experience v$REMOTE_VERSION"
             else
                 echo "You are already on the latest version ($LOCAL_VERSION)."
             fi
