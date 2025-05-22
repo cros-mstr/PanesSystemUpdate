@@ -1,5 +1,5 @@
 #!/bin/bash
-
+VERSION=1.04
 # Function to display the calculator interface
 display_calculator() {
     clear
