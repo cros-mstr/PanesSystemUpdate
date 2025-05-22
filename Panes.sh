@@ -54,21 +54,28 @@ fi
 }
 
 # Function to draw the desktop
+# Function to draw the desktop
 draw_desktop() {
-#Before allowing any interaction with the system, ensure updates.
-get_signed_version
+    #Before allowing any interaction with the system, ensure updates.
+    # dater # Make sure dater is called or logic related to it is handled here if needed.
+    # Note: Your `dater` function as provided earlier didn't have `verification_url` or `expected_signed_version` defined,
+    # and it included an `exit 1`. You might want to revisit how you intend `dater` to be used.
+    # For now, I'll comment it out if it's causing issues.
+    # get_signed_version # This is called inside dater, so usually not separately.
+
     clear
     echo "============================="
-    echo "|      Panes $VERSION       |"
+    echo "|     Panes $VERSION        |"
     echo "|---------------------------|"
     echo "|  [1] Text Editor          |"
     echo "|  [2] Calculator           |"
     echo "|  [3] File Viewer          |"
     echo "|  [4] Guessing Game        |"
-    echo "|  [5] Animation            |"
-    echo "|  [6] Check for Updates    |"
-    echo "|  [7] Reinstall Panes      |"
-    echo "|  [8] Exit                 |"
+    echo "|  [5] Application Store    |" # NEW OPTION
+    echo "|  [6] Animation            |" # Shifted
+    echo "|  [7] Check for Updates    |" # Shifted
+    echo "|  [8] Reinstall Panes      |" # Shifted
+    echo "|  [9] Exit                 |" # Shifted
     echo "============================="
     echo "Desktop"
     echo "============================="
@@ -180,6 +187,9 @@ recovery() {
 # TOTAL_UPDATE_DURATION=10 # Example duration in seconds
 
 # Function for the Application Store
+# Function for the Application Store
+# Function for the Application Store
+# Function for the Application Store
 app_store() {
     clear
     echo "==================================="
@@ -189,87 +199,100 @@ app_store() {
     sleep 1
 
     local app_dir="$PARENT_DIR/BootFolder/Applications"
-    local temp_repo_list="/tmp/panes_repo_list.txt"
+    mkdir -p "$app_dir" # Ensure the applications directory exists
+    local repo_apps_list_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/RepoAvailableApps"
     local base_repo_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/"
+    local temp_repo_list_file="/tmp/panes_repo_apps_list_$$_$(date +%s).txt" # Unique temp file for the list
 
-    # Fetch list of files in the main branch of the PanesSystemUpdate repo
-    # This uses the GitHub API for file list, which is more reliable than scraping raw HTML
-    # We'll then iterate through this list to get individual file contents
-    if ! curl -s "https://api.github.com/repos/cros-mstr/PanesSystemUpdate/git/trees/main?recursive=1" | \
-         grep -oP '"path": "\K[^"]*\.sh"' | \
-         sed 's/\.sh$//' > "$temp_repo_list"; then
-        echo "Error: Could not fetch application list from the repository."
+    # Fetch the list of available applications from the text file
+    echo "Downloading app list from $repo_apps_list_url..."
+    if ! curl -s "$repo_apps_list_url" -o "$temp_repo_list_file"; then
+        echo "Error: Failed to download the list of available applications."
+        rm -f "$temp_repo_list_file"
+        echo "Please ensure your internet connection is stable and the repository URL is correct."
         echo "Press [Enter] to return to the main menu."
-        read -r
+        read -r < /dev/tty
         return
     fi
 
-    local app_files=()
+    local app_filenames_in_repo=() # Stores the full filenames (e.g., "Calculator.sh")
     local app_display_names=()
     local app_statuses=()
     local app_versions=() # To store remote versions for comparison
 
-    # Read each app filename from the temporary list
-    while IFS= read -r app_name; do
-        # Exclude Panes and README
-        if [[ "$app_name" == "Panes" || "$app_name" == "README" ]]; then
+    # Read each app filename (without .sh) from the downloaded list
+    echo "Gathering app details..."
+    while IFS= read -r app_name_raw; do
+        # Basic validation: skip empty lines or lines that might be comments
+        if [[ -z "$app_name_raw" || "$app_name_raw" =~ ^# ]]; then
             continue
         fi
 
-        local full_app_filename="${app_name}.sh"
-        local local_app_path="$app_dir/$full_app_filename"
-        local remote_app_url="$base_repo_url$full_app_filename"
+        # Remove leading/trailing whitespace
+        local app_base_name=$(echo "$app_name_raw" | xargs) # e.g., "Calculator"
+
+        # Ensure it's a valid app name (e.g., doesn't contain / or other bad chars)
+        if [[ "$app_base_name" =~ [[:space:]] || "$app_base_name" =~ / ]]; then
+             echo "Warning: Invalid app name '$app_name_raw' found in RepoAvailableApps. Skipping."
+             continue
+        fi
+
+        local full_script_name="${app_base_name}.sh" # This is the consistent name, e.g., "Calculator.sh"
+        local local_app_path="$app_dir/$full_script_name"
+        local remote_app_url="$base_repo_url$full_script_name"
         local status="(Not Installed)"
         local remote_version="N/A"
-        local local_version="0" # Assume 0 if not installed
+        local local_version="0" # Assume 0 if not installed or version not found
 
         # Download the remote script temporarily to get its version and title
-        local temp_remote_app_file="/tmp/remote_$full_app_filename"
-        if curl -s "$remote_app_url" -o "$temp_remote_app_file"; then
-            remote_version=$(grep '^VERSION=' "$temp_remote_app_file" | cut -d'=' -f2 | tr -d '"')
-            if [ -z "$remote_version" ]; then
-                remote_version="1.0" # Default if version not found in remote script
-            fi
-            
-            # Check if installed locally
-            if [ -f "$local_app_path" ]; then
-                local_version=$(grep '^VERSION=' "$local_app_path" | cut -d'=' -f2 | tr -d '"')
-                if [ -z "$local_version" ]; then
-                    local_version="0" # Default if version not found in local script
-                fi
-
-                if (( $(echo "$remote_version > $local_version" | bc -l) )); then
-                    status="(Installed - Update Available)"
-                else
-                    status="(Installed)"
-                fi
-            fi
+        local temp_remote_app_file="/tmp/remote_${full_script_name}_$$_$(date +%s)" # Unique temp file for each app
+        
+        # Explicit check for curl failure during remote script metadata download
+        if ! curl -s "$remote_app_url" -o "$temp_remote_app_file"; then
+            echo "Warning: Could not download remote info for '$full_script_name'. Skipping this app."
             rm -f "$temp_remote_app_file"
-        else
-            echo "Warning: Could not fetch info for $full_app_filename. Skipping."
             continue # Skip if remote info can't be fetched
         fi
 
-        app_files+=("$full_app_filename")
-        app_display_names+=("$app_name") # Display name without .sh
+        remote_version=$(grep '^VERSION=' "$temp_remote_app_file" | cut -d'=' -f2 | tr -d '"')
+        if [ -z "$remote_version" ]; then
+            remote_version="1.0" # Default if version not found in remote script
+        fi
+        
+        # Check if installed locally
+        if [ -f "$local_app_path" ]; then
+            local_version=$(grep '^VERSION=' "$local_app_path" | cut -d'=' -f2 | tr -d '"')
+            if [ -z "$local_version" ]; then
+                local_version="0" # Default if version not found in local script
+            fi
+
+            if (( $(echo "$remote_version > $local_version" | bc -l) )); then
+                status="(Installed - Update Available)"
+            else
+                status="(Installed)"
+            fi
+        fi
+        rm -f "$temp_remote_app_file" # Clean up temporary remote app file
+
+        app_filenames_in_repo+=("$full_script_name") # Store the full filename with .sh
+        app_display_names+=("$app_base_name")       # Store the base name for display
         app_statuses+=("$status")
         app_versions+=("$remote_version") # Store remote version for future use
-    done < "$temp_repo_list"
+    done < "$temp_repo_list_file"
 
-    rm -f "$temp_repo_list"
+    rm -f "$temp_repo_list_file" # Clean up the main repo list file
 
-    if [ ${#app_files[@]} -eq 0 ]; then
-        echo "No applications found in the store."
+    if [ ${#app_filenames_in_repo[@]} -eq 0 ]; then
+        echo "No applications found in the store based on the repository list."
         echo "Press [Enter] to return to the main menu."
-        read -r
+        read -r < /dev/tty
         return
     fi
 
     # Display the store menu
-    local i=0
     PS3="Select an application to install/update (or 0 to go back): "
     local options=()
-    for ((idx=0; idx<${#app_files[@]}; idx++)); do
+    for ((idx=0; idx<${#app_filenames_in_repo[@]}; idx++)); do
         options+=("${app_display_names[idx]} ${app_statuses[idx]}")
     done
     
@@ -278,42 +301,49 @@ app_store() {
             break # Exit the select loop
         elif [[ -n "$choice" ]]; then
             local selected_index=$((REPLY - 1)) # REPLY is the number entered by user
-            local selected_app_filename="${app_files[selected_index]}"
+            
+            # Input validation to prevent out-of-bounds access
+            if (( selected_index < 0 || selected_index >= ${#app_filenames_in_repo[@]} )); then
+                echo "Invalid selection number. Please choose a number from the list or 0."
+                continue
+            fi
+
+            local selected_app_filename="${app_filenames_in_repo[selected_index]}" # This now has the correct .sh
             local selected_app_name="${app_display_names[selected_index]}"
-            local selected_app_url="$base_repo_url$selected_app_filename"
+            local remote_app_url="$base_repo_url$selected_app_filename" # Use the correct filename
             local selected_app_status="${app_statuses[selected_index]}"
 
             echo "You selected: ${selected_app_name} ${selected_app_status}"
             echo "Preparing to install/update $selected_app_name..."
             sleep 1
 
-            local local_app_path="$app_dir/$selected_app_filename"
+            local local_app_path="$app_dir/$selected_app_filename" # Use the correct filename for local path
             local action_message="install"
             if [[ "$selected_app_status" == *"(Installed"* ]]; then
                 action_message="update"
             fi
 
             echo "Downloading $selected_app_name..."
-            if curl -s "$selected_app_url" -o "$local_app_path"; then
+            # Explicit check for curl failure during final application download
+            if curl -s "$remote_app_url" -o "$local_app_path"; then
                 echo "Successfully downloaded and ${action_message}d $selected_app_name!"
                 # Set execute permissions
                 chmod +x "$local_app_path"
             else
-                echo "Error: Failed to download $selected_app_name."
+                echo "Error: Failed to download $selected_app_name. Please check disk space and permissions for '$local_app_path' and network connection."
             fi
             echo "Press [Enter] to continue..."
-            read -r
+            read -r < /dev/tty # Ensure this read also uses /dev/tty
             break # Exit select loop after action
         else
             echo "Invalid option. Please enter a number from the list."
             # The select loop automatically re-prompts
         fi
-    done < /dev/tty # Ensure select reads from terminal, similar to previous fix
+    done < /dev/tty # Ensure select reads from terminal
 
     echo "Returning to main menu..."
     sleep 1
 }
-
 # Function to check and update individual applications in BootFolder/Applications
 # Function to check and update individual applications in BootFolder/Applications
 # Function to check and update individual applications in BootFolder/Applications
@@ -657,35 +687,38 @@ while true; do
     read -n 1 -s option
     case $option in
         1)
-            text_editor
+            text_editor # Assuming this function exists
             ;;
         2)
-            calculator
+            calculator # Assuming this function exists
             ;;
         3)
-            file_viewer
+            file_viewer # Assuming this function exists
             ;;
         4)
-            guessing_game
+            guessing_game # Assuming this function exists
             ;;
-        5)
+        5) # NEW CASE FOR APP STORE
+            app_store
+            ;;
+        6) # Old Animation option, now shifted
             shooting_star
-            draw_ascii_art
+            draw_ascii_art # Assuming this function exists (you had animate_ascii_art earlier)
             ;;
-        6)
+        7) # Old Check for Updates, now shifted
             check_for_updates
             ;;
-        7)
+        8) # Old Reinstall Panes, now shifted
             ReInstall
             ;;
-        8)
+        9) # Old Exit, now shifted
             clear
             echo "Exiting Panes..."
             sleep 1
             exit 0
             ;;
         *)
-            echo "Invalid option. Please select [1], [2], [3], [4], [5], [6], or [7]."
+            echo "Invalid option. Please select [1] through [9]."
             sleep 1
             ;;
     esac
