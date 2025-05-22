@@ -1,4 +1,7 @@
 #!/bin/bash
+PANESType=ProgrammableApplication
+UPDATE_TITLE="CALCULATOR 1"
+UPDATE_DESC="A Simple calculator for Panes, straight from the main source."
 VERSION=1
 # Function to display the calculator interface
 display_calculator() {
