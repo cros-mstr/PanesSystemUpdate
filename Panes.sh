@@ -1,12 +1,12 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-UPDATE_TITLE="Panes OS 1.04 "Shimmer" "
-UPDATE_DESC="This Update finalizes Online System Grading. 10.4(0) is fresh from DTC."
+UPDATE_TITLE="Panes OS 1.05 "Beamed" "
+UPDATE_DESC="Panes OS 1.05 Codenamed Beamed is an update that brings online application download functionality to your Panes experience. 10.5 is fresh from DTC and is ready for public use."
 # Check if the script is running from a specific path
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.04
+VERSION=1.05
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
@@ -168,6 +168,281 @@ recovery() {
 # Function to check for updates
 # I had it duped by accident this whole time... whoops...
 # Function to check for updates
+# Define PARENT_DIR and TOTAL_UPDATE_DURATION if not already defined
+# For example:
+# PARENT_DIR="$(pwd)" # Or adjust this to your actual parent directory logic
+# TOTAL_UPDATE_DURATION=10 # Example duration in seconds
+
+# Function to check and update individual applications in BootFolder/Applications
+# Define PARENT_DIR and TOTAL_UPDATE_DURATION if not already defined
+# For example:
+# PARENT_DIR="$(pwd)" # Or adjust this to your actual parent directory logic
+# TOTAL_UPDATE_DURATION=10 # Example duration in seconds
+
+# Function for the Application Store
+app_store() {
+    clear
+    echo "==================================="
+    echo "|       Panes Application Store   |"
+    echo "==================================="
+    echo "Fetching available applications..."
+    sleep 1
+
+    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local temp_repo_list="/tmp/panes_repo_list.txt"
+    local base_repo_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/"
+
+    # Fetch list of files in the main branch of the PanesSystemUpdate repo
+    # This uses the GitHub API for file list, which is more reliable than scraping raw HTML
+    # We'll then iterate through this list to get individual file contents
+    if ! curl -s "https://api.github.com/repos/cros-mstr/PanesSystemUpdate/git/trees/main?recursive=1" | \
+         grep -oP '"path": "\K[^"]*\.sh"' | \
+         sed 's/\.sh$//' > "$temp_repo_list"; then
+        echo "Error: Could not fetch application list from the repository."
+        echo "Press [Enter] to return to the main menu."
+        read -r
+        return
+    fi
+
+    local app_files=()
+    local app_display_names=()
+    local app_statuses=()
+    local app_versions=() # To store remote versions for comparison
+
+    # Read each app filename from the temporary list
+    while IFS= read -r app_name; do
+        # Exclude Panes and README
+        if [[ "$app_name" == "Panes" || "$app_name" == "README" ]]; then
+            continue
+        fi
+
+        local full_app_filename="${app_name}.sh"
+        local local_app_path="$app_dir/$full_app_filename"
+        local remote_app_url="$base_repo_url$full_app_filename"
+        local status="(Not Installed)"
+        local remote_version="N/A"
+        local local_version="0" # Assume 0 if not installed
+
+        # Download the remote script temporarily to get its version and title
+        local temp_remote_app_file="/tmp/remote_$full_app_filename"
+        if curl -s "$remote_app_url" -o "$temp_remote_app_file"; then
+            remote_version=$(grep '^VERSION=' "$temp_remote_app_file" | cut -d'=' -f2 | tr -d '"')
+            if [ -z "$remote_version" ]; then
+                remote_version="1.0" # Default if version not found in remote script
+            fi
+            
+            # Check if installed locally
+            if [ -f "$local_app_path" ]; then
+                local_version=$(grep '^VERSION=' "$local_app_path" | cut -d'=' -f2 | tr -d '"')
+                if [ -z "$local_version" ]; then
+                    local_version="0" # Default if version not found in local script
+                fi
+
+                if (( $(echo "$remote_version > $local_version" | bc -l) )); then
+                    status="(Installed - Update Available)"
+                else
+                    status="(Installed)"
+                fi
+            fi
+            rm -f "$temp_remote_app_file"
+        else
+            echo "Warning: Could not fetch info for $full_app_filename. Skipping."
+            continue # Skip if remote info can't be fetched
+        fi
+
+        app_files+=("$full_app_filename")
+        app_display_names+=("$app_name") # Display name without .sh
+        app_statuses+=("$status")
+        app_versions+=("$remote_version") # Store remote version for future use
+    done < "$temp_repo_list"
+
+    rm -f "$temp_repo_list"
+
+    if [ ${#app_files[@]} -eq 0 ]; then
+        echo "No applications found in the store."
+        echo "Press [Enter] to return to the main menu."
+        read -r
+        return
+    fi
+
+    # Display the store menu
+    local i=0
+    PS3="Select an application to install/update (or 0 to go back): "
+    local options=()
+    for ((idx=0; idx<${#app_files[@]}; idx++)); do
+        options+=("${app_display_names[idx]} ${app_statuses[idx]}")
+    done
+    
+    select choice in "${options[@]}" "Go Back"; do
+        if [[ "$choice" == "Go Back" ]]; then
+            break # Exit the select loop
+        elif [[ -n "$choice" ]]; then
+            local selected_index=$((REPLY - 1)) # REPLY is the number entered by user
+            local selected_app_filename="${app_files[selected_index]}"
+            local selected_app_name="${app_display_names[selected_index]}"
+            local selected_app_url="$base_repo_url$selected_app_filename"
+            local selected_app_status="${app_statuses[selected_index]}"
+
+            echo "You selected: ${selected_app_name} ${selected_app_status}"
+            echo "Preparing to install/update $selected_app_name..."
+            sleep 1
+
+            local local_app_path="$app_dir/$selected_app_filename"
+            local action_message="install"
+            if [[ "$selected_app_status" == *"(Installed"* ]]; then
+                action_message="update"
+            fi
+
+            echo "Downloading $selected_app_name..."
+            if curl -s "$selected_app_url" -o "$local_app_path"; then
+                echo "Successfully downloaded and ${action_message}d $selected_app_name!"
+                # Set execute permissions
+                chmod +x "$local_app_path"
+            else
+                echo "Error: Failed to download $selected_app_name."
+            fi
+            echo "Press [Enter] to continue..."
+            read -r
+            break # Exit select loop after action
+        else
+            echo "Invalid option. Please enter a number from the list."
+            # The select loop automatically re-prompts
+        fi
+    done < /dev/tty # Ensure select reads from terminal, similar to previous fix
+
+    echo "Returning to main menu..."
+    sleep 1
+}
+
+# Function to check and update individual applications in BootFolder/Applications
+# Function to check and update individual applications in BootFolder/Applications
+# Function to check and update individual applications in BootFolder/Applications
+# Function to check and update individual applications in BootFolder/Applications
+check_application_updates() {
+    clear
+    echo "==================================="
+    echo "|   Checking Application Updates    |"
+    echo "==================================="
+    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local updated_any_app=false
+
+    if [ ! -d "$app_dir" ]; then
+        echo "Applications directory '$app_dir' not found. Skipping application updates."
+        echo "Press [Enter] to return to the main menu."
+        read -r
+        return
+    fi
+
+    echo "Scanning for .sh scripts in $app_dir..."
+    sleep 1
+
+    # Use a separate file descriptor for the while loop to prevent stdin conflicts
+    # This redirects find's output to FD 3, keeping FD 0 (stdin) free for user input.
+    find "$app_dir" -maxdepth 1 -type f -name "*.sh" | while read -r app_script <&3; do
+        local app_filename=$(basename "$app_script")
+        local local_app_version=""
+        local remote_app_version=""
+        local remote_app_title="N/A" # Default if not found
+        local remote_app_desc="No description provided." # Default if not found
+        local remote_app_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/$app_filename"
+
+        echo -e "\n--- Checking $app_filename ---"
+
+        local_app_version=$(grep '^VERSION=' "$app_script" | cut -d'=' -f2 | tr -d '"')
+
+        if [ -z "$local_app_version" ]; then
+            echo "  Warning: Could not find VERSION for $app_filename. Skipping this application."
+            continue
+        fi
+
+        echo "  Fetching remote info for $app_filename from $remote_app_url..."
+        local temp_remote_file="/tmp/remote_$app_filename"
+
+        if ! curl -s "$remote_app_url" -o "$temp_remote_file"; then
+            echo "  Error: Could not download remote $app_filename. Skipping this application."
+            continue
+        fi
+
+        remote_app_version=$(grep '^VERSION=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
+        temp_title=$(grep '^UPDATE_TITLE=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
+        temp_desc=$(grep '^UPDATE_DESC=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
+
+        if [ -n "$temp_title" ]; then
+            remote_app_title="$temp_title"
+        fi
+        if [ -n "$temp_desc" ]; then
+            remote_app_desc="$temp_desc"
+        fi
+
+        rm -f "$temp_remote_file"
+
+        if [ -z "$remote_app_version" ]; then
+            echo "  Error: Could not find VERSION in remote $app_filename. Skipping this application."
+            continue
+        fi
+
+        echo "  Local Version: $local_app_version"
+        echo "  Remote Version: $remote_app_version"
+
+        if (( $(echo "$remote_app_version > $local_app_version" | bc -l) )); then
+            echo -e "\n  ==================================="
+            echo "  |   Update Available for $app_filename   |"
+            echo "  ==================================="
+            echo "  Title: $remote_app_title"
+            echo "  Description: $remote_app_desc"
+            echo "  -----------------------------------"
+            
+            # --- START OF REUSED CONFIRMATION LOGIC FROM PANES.SH UPDATE ---
+            local confirm_app_update
+            # Explicitly read from /dev/tty to bypass any stdin redirection from the `while read` loop
+            read -r -p "  A new version ($remote_app_version) is available. Proceed with update? (y/n): " confirm_app_update < /dev/tty
+            
+            if [[ "$confirm_app_update" == "y" || "$confirm_app_update" == "Y" ]]; then
+                echo "  Proceeding with $app_filename update..."
+                local mini_total_steps=10
+                local mini_step_duration=$(echo "$TOTAL_UPDATE_DURATION * 0.1 / $mini_total_steps" | bc -l)
+
+                for ((i=0; i<=mini_total_steps; i++)); do
+                    sleep "$mini_step_duration"
+                    printf "\r  Progress: ["
+                    for ((j=0; j<i; j++)); do
+                        printf "#"
+                    done
+                    for ((j=i; j<mini_total_steps; j++)); do
+                        printf " "
+                    done
+                    printf "] %d%%" "$((i * 100 / mini_total_steps))"
+                done
+                printf "\r"
+
+                if curl -s "$remote_app_url" -o "$app_script"; then
+                    echo "  $app_filename updated successfully!"
+                    updated_any_app=true
+                else
+                    echo "  Error: Failed to download and update $app_filename."
+                fi
+            else
+                echo "  Update for $app_filename cancelled by user."
+                continue # Move to the next application in the loop
+            fi
+            # --- END OF REUSED CONFIRMATION LOGIC ---
+        else
+            echo "  $app_filename is already on the latest version ($local_app_version)."
+        fi
+    done 3<&0 # This redirects the original stdin (FD 0) to FD 3 for the `find` loop
+              # and makes FD 0 available for `read` commands within the loop.
+
+    echo -e "\n--- Application Update Check Complete ---"
+    if [ "$updated_any_app" = true ]; then
+        echo "Some application updates were applied."
+    else
+        echo "No application updates found or applied."
+    fi
+    echo "Press [Enter] to return to the main menu."
+    read -r
+}
+
+# Main check_for_updates function
 check_for_updates() {
     clear
     echo "============================="
@@ -176,65 +451,20 @@ check_for_updates() {
     echo "Checking for updates..."
     sleep 1
     echo "Available update options:"
-    echo "1. Regular update (stable version)"
+    echo "1. Regular update (stable version) - Panes.sh"
     echo "2. Dev Seeding (potentially unstable, latest features)"
-    read -p "Select an update type (1 or 2): " update_choice
+    echo "3. Check and Update Applications" # New option
+    read -p "Select an update type (1, 2, or 3): " update_choice
 
     case "$update_choice" in
         1)
+            # Main Panes.sh update logic
             # Define the URL for the remote Panes.sh script
             REMOTE_PANES_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
             LOCAL_VERSION="$VERSION" # Assuming VERSION is defined globally or in the calling script
 
-            echo "Fetching remote version information..."
-                            # Displaying a progress bar
-                local total_steps=100/2 # Total number of steps to display progress
-                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps /100" | bc -l) # Duration of each step
-                for ((i=0; i<=total_steps; i++)); do
-                    sleep "$step_duration"
-                    printf "\rProgress: ["
-                    for ((j=0; j<i; j++)); do
-                        printf "#"
-                    done
-                    for ((j=i; j<total_steps; j++)); do
-                        printf " "
-                    done
-                    printf "] %d%%" "$((i * 100 / total_steps))"
-                done
-                sleep 1
-                            echo "Checking Eligibility..."
-                            # Displaying a progress bar
-                local total_steps=100/2 # Total number of steps to display progress
-                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps /100" | bc -l) # Duration of each step
-                for ((i=0; i<=total_steps; i++)); do
-                    sleep "$step_duration"
-                    printf "\rProgress: ["
-                    for ((j=0; j<i; j++)); do
-                        printf "#"
-                    done
-                    for ((j=i; j<total_steps; j++)); do
-                        printf " "
-                    done
-                    printf "] %d%%" "$((i * 100 / total_steps))"
-                done
-                echo "Requesting Update"
-                                            # Displaying a progress bar
-                local total_steps=100/2 # Total number of steps to display progress
-                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 100 / $total_steps/57" | bc -l) # Duration of each step
-                for ((i=0; i<=total_steps; i++)); do
-                    sleep "$step_duration"
-                    printf "\rProgress: ["
-                    for ((j=0; j<i; j++)); do
-                        printf "#"
-                    done
-                    for ((j=i; j<total_steps; j++)); do
-                        printf " "
-                    done
-                    printf "] %d%%" "$((i * 100 / total_steps))"
-                done
-            rm -rf PanesSystemUpdate 
-            # if it exists... it will cause errors
-            # Download the remote Panes.sh temporarily to extract its version
+            echo "Fetching remote Panes.sh version information..."
+            # Download the remote Panes.sh temporarily to extract its version and update info
             if ! curl -s "$REMOTE_PANES_URL" -o /tmp/remote_Panes.sh; then
                 echo "Error: Could not download remote Panes.sh to check version."
                 echo "Update cancelled."
@@ -242,8 +472,12 @@ check_for_updates() {
                 return
             fi
 
-            # Extract the VERSION using grep, cut, and tr for better compatibility
+            # Extract the VERSION
             REMOTE_VERSION=$(grep '^VERSION=' /tmp/remote_Panes.sh | cut -d'=' -f2 | tr -d '"')
+            # Extract UPDATE_TITLE
+            REMOTE_UPDATE_TITLE=$(grep '^UPDATE_TITLE=' /tmp/remote_Panes.sh | cut -d'=' -f2 | tr -d '"')
+            # Extract UPDATE_DESC
+            REMOTE_UPDATE_DESC=$(grep '^UPDATE_DESC=' /tmp/remote_Panes.sh | cut -d'=' -f2 | tr -d '"')
 
             if [ -z "$REMOTE_VERSION" ]; then
                 echo "Error: Could not find VERSION in the remote Panes.sh script, or it's empty."
@@ -255,61 +489,68 @@ check_for_updates() {
 
             rm -f /tmp/remote_Panes.sh # Clean up the temporary file
 
-            echo "Current Version: $LOCAL_VERSION"
-            echo "Available Version: $REMOTE_VERSION"
+            echo "Current Panes.sh Version: $LOCAL_VERSION"
+            echo "Available Panes.sh Version: $REMOTE_VERSION"
 
-            # Simple version comparison (assumes numerical or comparable versions)
-            # For more complex versioning (e.g., 1.0.0-beta), a more robust comparison might be needed.
-            # Using bc for floating-point comparison, which handles "1.0" vs "0.9" correctly.
             if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
-                echo "A new version ($REMOTE_VERSION) is available. Proceeding with update."
-                # Displaying a progress bar
-                local total_steps=100/2 # Total number of steps to display progress
-                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
-                for ((i=0; i<=total_steps; i++)); do
-                    sleep "$step_duration"
-                    printf "\rProgress: ["
-                    for ((j=0; j<i; j++)); do
-                        printf "#"
+                echo -e "\n============================="
+                echo "|      Update Available     |"
+                echo "============================="
+                echo "Title: $REMOTE_UPDATE_TITLE"
+                echo "Description: $REMOTE_UPDATE_DESC"
+                echo "-----------------------------"
+                read -p "A new Panes.sh version ($REMOTE_VERSION) is available. Proceed with update? (y/n): " confirm_update
+                # REVISED LOGIC FOR CONFIRMATION
+                if [[ "$confirm_update" == "y" || "$confirm_update" == "Y" ]]; then
+                    echo "Proceeding with Panes.sh update..."
+                    # Displaying a progress bar
+                    local total_steps=20 # Total number of steps to display progress
+                    local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
+                    for ((i=0; i<=total_steps; i++)); do
+                        sleep "$step_duration"
+                        printf "\rProgress: ["
+                        for ((j=0; j<i; j++)); do
+                            printf "#"
+                        done
+                        for ((j=i; j<total_steps; j++)); do
+                            printf " "
+                        done
+                        printf "] %d%%" "$((i * 100 / total_steps))"
                     done
-                    for ((j=i; j<total_steps; j++)); do
-                        printf " "
-                    done
-                    printf "] %d%%" "$((i * 100 / total_steps))"
-                done
-                git clone https://github.com/cros-mstr/PanesSystemUpdate.git
-                echo -e "\n\nUpdate downloaded. Applying changes..."
+                    git clone https://github.com/cros-mstr/PanesSystemUpdate.git
+                    echo -e "\n\nUpdate downloaded. Applying changes..."
 
-                # Change directory back up one level and copy the script
-                sleep 1
-                cd "$PARENT_DIR" || exit
-               # cd BootFolder
-                cp -f -r BootFolder/PanesSystemUpdate/Panes.sh BootFolder  # Copy only Panes.sh
+                    # Change directory back up one level and copy the script
+                    cd "$PARENT_DIR" || exit
+                    cp -f PanesSystemUpdate/Panes.sh BootFolder/Panes.sh # Copy only Panes.sh
+                    echo "Panes.sh copied."
 
-                # Displaying a progress bar (again)
-                local total_steps=100 # Total number of steps to display progress
-                local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
-                for ((i=0; i<=total_steps; i++)); do
-                    sleep "$step_duration"
-                    printf "\rUnpacking: ["
-                    for ((j=0; j<i; j++)); do
-                        printf "#"
+                    # Displaying a progress bar (again) for unpacking
+                    local total_steps_unpack=20 # Total number of steps to display progress
+                    local step_duration_unpack=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps_unpack" | bc -l) # Duration of each step
+                    for ((i=0; i<=total_steps_unpack; i++)); do
+                        sleep "$step_duration_unpack"
+                        printf "\rUnpacking: ["
+                        for ((j=0; j<i; j++)); do
+                            printf "#"
+                        done
+                        for ((j=i; j<total_steps_unpack; j++)); do
+                            printf " "
+                        done
+                        printf "] %d%%" "$((i * 10 / total_steps_unpack))"
                     done
-                    for ((j=i; j<total_steps; j++)); do
-                        printf " "
-                    done
-                    printf "] %d%%" "$((i * 100 / total_steps))"
-                done
-                cp -f -v PanesSystemUpdate/. BootFolder/ # Copy remaining files from cloned repo
-                echo -e "\n\nUnpacked. Cleaning and applying changes..."
-                # Clean up the cloned repository
-                rm -rf PanesSystemUpdate
-                echo "Update applied successfully!"
-                echo "Reexecute Panes to experience v$REMOTE_VERSION"
-                cd $PARENT_DIR
-                bash Panes.sh
+                    cp -f -v PanesSystemUpdate/* BootFolder/ # Copy remaining files from cloned repo
+                    echo -e "\n\nUnpacked. Cleaning and applying changes..."
+                    # Clean up the cloned repository
+                    rm -rf PanesSystemUpdate
+                    echo "Panes.sh update applied successfully!"
+                else # User did not confirm 'y' or 'Y'
+                    echo "Panes.sh update cancelled by user."
+                    read -r -p "Press [Enter] to return to the desktop."
+                    return
+                fi
             else
-                echo "You are already on the latest version ($LOCAL_VERSION)."
+                echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
             fi
             echo "Press [Enter] to return to the desktop."
             read -r
@@ -339,6 +580,10 @@ check_for_updates() {
             sleep 20
             sudo bash DevSeed.panes/Upgrader.sh
             sleep 10
+            ;;
+        3)
+            # Call the new function for application updates
+            check_application_updates
             ;;
         *)
             echo "Invalid choice. Update cancelled."
