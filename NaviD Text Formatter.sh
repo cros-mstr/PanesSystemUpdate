@@ -1,6 +1,10 @@
 #!/bin/bash
 # Script to launch a text-based document editor (nano by default)
-
+PANESType=StatefulApplicationThirdPartySource
+PANESSource=ThirdParty
+UPDATE_TITLE="CALCULATOR 1"
+UPDATE_DESC="A Simple calculator for Panes, straight from the main source."
+VERSION=1
 # Check if nano is installed
 if command -v nano &> /dev/null; then
     EDITOR_CMD="nano"
