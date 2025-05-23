@@ -1,7 +1,5 @@
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
-#PanesDR Coming Soon
-#Bugs, bugs, BUGS!!!
 #!/bin/bash
 cd "$(dirname "$0")"
 UPDATE_TITLE="Panes OS 1.052 "BugSquasher Glimpse" "
@@ -580,13 +578,14 @@ check_application_updates() {
     read -r
 }
 # New function for the Developer Update (keep this as is, defined before check_for_updates)
+# New function for the Developer Update
 dev_update() {
     clear
     echo "==================================="
     echo "|     Panes Developer Update      |"
     echo "==================================="
     echo "This update channel requires a developer key."
-    read -r -s -p "Enter Developer Key: " dev_key # -s for silent input
+    read -r -s -p "Enter Developer Key: " user_entered_dev_key # Changed variable name to avoid confusion with file content
     echo # Newline after silent input
 
     local dev_key_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/DeveloperKey"
@@ -599,17 +598,22 @@ dev_update() {
 
     echo "Verifying developer key..."
     if ! curl -s "$dev_key_url" -o "$temp_dev_key_file"; then
-        echo "Error: Could not download developer key for verification. Check internet connection or URL."
+        echo "Error: Could not download developer key file for verification. Check internet connection or URL."
         rm -f "$temp_dev_key_file" 2>/dev/null
         echo "Press [Enter] to return to the main menu."
         read -r < /dev/tty
         return
     fi
 
-    local stored_dev_key=$(cat "$temp_dev_key_file" | xargs)
-    rm -f "$temp_dev_key_file" 2>/dev/null
+    # *** CRITICAL CHANGE HERE ***
+    # Extract only the value of 'devkey' from the downloaded file
+    local stored_dev_key=$(grep '^devkey=' "$temp_dev_key_file" | cut -d'=' -f2 | xargs)
+    # ^^^ This finds the line starting with "devkey=", cuts by "=", takes the second field (the value), and trims whitespace.
 
-    if [[ "$dev_key" != "$stored_dev_key" ]]; then
+    rm -f "$temp_dev_key_file" 2>/dev/null # Clean up temp file
+
+    # Now compare the user's input with the extracted key
+    if [[ "$user_entered_dev_key" != "$stored_dev_key" ]]; then
         echo "Developer Key Mismatch. Access Denied."
         echo "Press [Enter] to return to the main menu."
         read -r < /dev/tty
@@ -619,6 +623,7 @@ dev_update() {
     echo "Developer Key Accepted. Proceeding with Developer Update..."
     sleep 1
 
+    # Step 1: Download and run EnvironmentUpdater.sh
     echo "Downloading EnvironmentUpdater.sh..."
     if ! curl -s "$env_updater_url" -o "$temp_env_updater_file"; then
         echo "Error: Failed to download EnvironmentUpdater.sh. Aborting."
@@ -643,6 +648,7 @@ dev_update() {
         echo "EnvironmentUpdater.sh completed successfully."
     fi
 
+    # Step 2: Download and run PanesGlimpse.sh (which will likely replace Panes.sh)
     echo "Downloading PanesGlimpse.sh..."
     if ! curl -s "$panes_glimpse_url" -o "$temp_panes_glimpse_file"; then
         echo "Error: Failed to download PanesGlimpse.sh. Aborting."
@@ -660,7 +666,6 @@ dev_update() {
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
 }
-
 # Modified check_for_updates function
 check_for_updates() {
     clear
@@ -896,4 +901,3 @@ while true; do
         sleep 1
     fi
 done
-
