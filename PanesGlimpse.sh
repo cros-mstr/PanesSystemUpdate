@@ -1,57 +1,6 @@
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 #!/bin/bash
-
-# ==============================================================================
-# PanesGlimpse.sh - The new version of Panes.sh downloaded via Developer Update
-# This script's purpose is to replace the main Panes.sh and then restart it.
-# This entire script's content should be the desired new version of Panes.sh.
-# ==============================================================================
-
-# Ensure the original Panes.sh parent directory was passed as an argument
-if [ -z "$1" ]; then
-    echo "Error: Original Panes.sh directory not provided to PanesGlimpse.sh. Aborting update."
-    exit 1
-fi
-
-# The first argument ($1) is the original PARENT_DIR from the calling Panes.sh
-ORIGINAL_PANES_PARENT_DIR="$1"
-TARGET_PANES_PATH="$ORIGINAL_PANES_PARENT_DIR/Panes.sh"
-
-echo "Panes Update: Starting Glimpse update process."
-echo "Panes Update: Attempting to replace: $TARGET_PANES_PATH"
-
-# Copy this currently running script ($0) to the target Panes.sh path
-# This effectively makes this temporary PanesGlimpse.sh the new Panes.sh
-if cp "$0" "$TARGET_PANES_PATH"; then
-    echo "Panes Update: Successfully copied new Panes.sh to $TARGET_PANES_PATH."
-    chmod +x "$TARGET_PANES_PATH"
-    echo "Panes Update: Set execute permissions on $TARGET_PANES_PATH."
-    echo "Panes Update: Update complete. Restarting Panes..."
-    sleep 2
-    
-    # Execute the newly updated Panes.sh.
-    # 'exec' replaces the current shell process with the new one,
-    # so Panes will restart as the updated version.
-    exec bash "$TARGET_PANES_PATH"
-
-    # This part should ideally not be reached if exec is successful
-    echo "Panes Update: Error - Failed to execute the new Panes.sh!"
-    exit 1
-else
-    echo "Panes Update: Error - Failed to copy new Panes.sh to $TARGET_PANES_PATH."
-    echo "Panes Update: Check permissions or disk space. Update failed."
-    exit 1
-fi
-
-# ==============================================================================
-# IMPORTANT: The rest of THIS FILE (PanesGlimpse.sh)
-# should contain the complete, new code for your Panes.sh operating system.
-# This means, everything below this line in the *actual file on GitHub*
-# should be the updated Panes.sh script.
-# ==============================================================================
-
-
 cd "$(dirname "$0")"
 UPDATE_TITLE="Panes OS 1.052 "BugSquasher Glimpse" "
 UPDATE_DESC="Panes OS 1.052 is integrated into the public DTC repository. Expect bugs, glitches, and features not present in mainstream PanesOs."
@@ -711,8 +660,7 @@ dev_update() {
     chmod +x "$temp_panes_glimpse_file"
 
     echo "Running PanesGlimpse.sh to finalize update..."
-    exec bash "$temp_panes_glimpse_file"
-
+    exec bash "$temp_panes_glimpse_file" "$PARENT_DIR"
     echo "Error: Failed to execute PanesGlimpse.sh unexpectedly."
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
