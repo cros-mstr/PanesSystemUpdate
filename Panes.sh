@@ -55,14 +55,9 @@ fi
 
 # Function to draw the desktop
 # Function to draw the desktop
+# Function to draw the desktop
+# Function to draw the desktop
 draw_desktop() {
-    #Before allowing any interaction with the system, ensure updates.
-    # dater # Make sure dater is called or logic related to it is handled here if needed.
-    # Note: Your `dater` function as provided earlier didn't have `verification_url` or `expected_signed_version` defined,
-    # and it included an `exit 1`. You might want to revisit how you intend `dater` to be used.
-    # For now, I'll comment it out if it's causing issues.
-    # get_signed_version # This is called inside dater, so usually not separately.
-
     clear
     echo "============================="
     echo "|     Panes $VERSION        |"
@@ -71,14 +66,119 @@ draw_desktop() {
     echo "|  [2] Calculator           |"
     echo "|  [3] File Viewer          |"
     echo "|  [4] Guessing Game        |"
-    echo "|  [5] Application Store    |" # NEW OPTION
-    echo "|  [6] Animation            |" # Shifted
-    echo "|  [7] Check for Updates    |" # Shifted
-    echo "|  [8] Reinstall Panes      |" # Shifted
-    echo "|  [9] Exit                 |" # Shifted
+    echo "|  [5] Application Store    |"
+    echo "|  [6] Animation            |"
+    echo "|  [7] Check for Updates    |"
+    echo "|  [8] Reinstall Panes      |"
+    echo "|  [9] Exit                 |"
+    echo "|---------------------------|"
+    echo "|   Installed Applications  |"
+    echo "|---------------------------|"
+
+    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local app_counter=10 # Start numbering installed apps from 10
+    local temp_app_list="/tmp/panes_installed_apps_$$_$(date +%s).txt" # Temporary file
+
+    # Clear the global array before re-populating it
+    INSTALLED_APPS_GLOBAL=()
+
+    if [ -d "$app_dir" ]; then
+        # Find .sh files and put their full paths into a temporary file
+        find "$app_dir" -maxdepth 1 -type f -name "*.sh" | sort > "$temp_app_list"
+
+        # Now read from the temporary file into the array in the current shell
+        while IFS= read -r app_path; do
+            local app_filename=$(basename "$app_path")
+            local app_display_name="${app_filename%.sh}"
+
+            INSTALLED_APPS_GLOBAL+=("$app_filename")
+            printf "|  [%d] %s\n" "$app_counter" "$app_display_name"
+            ((app_counter++))
+        done < "$temp_app_list"
+    fi
+
+    # Clean up the temporary file
+    rm -f "$temp_app_list"
+
     echo "============================="
     echo "Desktop"
     echo "============================="
+}
+# ===================================================================
+# Application Management Functions (place these here)
+# ===================================================================
+
+# Function to launch an application
+launch_application() {
+    local app_full_path="$1"
+    clear
+    echo "Launching $(basename "$app_full_path" .sh)..."
+    sleep 1
+    ( bash "$app_full_path" ) # Execute the application in a subshell
+    echo -e "\nApplication finished. Press [Enter] to return to the desktop."
+    read -r < /dev/tty
+}
+
+# Function to uninstall an application
+uninstall_application() {
+    local app_full_path="$1"
+    local app_display_name=$(basename "$app_full_path" .sh)
+    clear
+    echo "==================================="
+    echo "| Uninstalling $app_display_name |"
+    echo "==================================="
+    read -r -p "Are you sure you want to uninstall $app_display_name? (y/n): " confirm_uninstall < /dev/tty
+    confirm_uninstall=$(echo "$confirm_uninstall" | tr '[:upper:]' '[:lower:]' | xargs)
+    if [[ "$confirm_uninstall" == "y" ]]; then
+        if rm -f "$app_full_path"; then
+            echo "$app_display_name uninstalled successfully!"
+        else
+            echo "Error: Failed to uninstall $app_display_name. Check permissions for $app_full_path."
+        fi
+    else
+        echo "Uninstallation of $app_display_name cancelled."
+    fi
+    echo "Press [Enter] to return to the desktop."
+    read -r < /dev/tty
+}
+
+# Menu for an installed application (this calls launch_application and uninstall_application)
+app_menu() {
+    local selected_app_filename="$1"
+    local app_full_path="$PARENT_DIR/BootFolder/Applications/$selected_app_filename"
+    local app_display_name=$(basename "$selected_app_filename" .sh)
+    while true; do
+        clear
+        echo "==================================="
+        echo "|   $app_display_name Options    |"
+        echo "==================================="
+        echo "|  [1] Launch $app_display_name   |"
+        echo "|  [2] Uninstall $app_display_name|"
+        echo "|  [0] Back to Desktop          |"
+        echo "==================================="
+        read -r -p "Enter your choice: " app_option < /dev/tty
+        case $app_option in
+            1)
+                if [ -f "$app_full_path" ]; then
+                    launch_application "$app_full_path" # <--- Called here
+                else
+                    echo "Error: $app_display_name not found at $app_full_path. It might have been manually removed."
+                    sleep 2
+                fi
+                ;;
+            2)
+                uninstall_application "$app_full_path" # <--- Called here
+                break
+                ;;
+            0)
+                break
+                ;;
+            *)
+                echo "Invalid option. Please choose 1, 2, or 0."
+                sleep 1
+                ;;
+        esac
+    done
 }
 
 # Function to add a shooting star animation
@@ -171,6 +271,8 @@ recovery() {
     tput reset # Reset terminal
     exit 1
 }
+
+
 
 # Function to check for updates
 # I had it duped by accident this whole time... whoops...
@@ -678,48 +780,83 @@ if [ $? -ne 0 ]; then
     recovery # Call recovery if the animation did not finish successfully
 fi
 #deprecated spinner
-#wait $spinner_pid 
+#wait $spinner_pid
 # Wait for spinner to finish
 
 # Main loop for the GUI
+# Main loop for the GUI
+# Main loop for the GUI
+# Main loop for the GUI
+# Main loop for the GUI
+# Main loop for the GUI
+# Main loop for the GUI
+# Main loop for the GUI
 while true; do
-    draw_desktop
-    read -n 1 -s option
-    case $option in
-        1)
-            text_editor # Assuming this function exists
-            ;;
-        2)
-            calculator # Assuming this function exists
-            ;;
-        3)
-            file_viewer # Assuming this function exists
-            ;;
-        4)
-            guessing_game # Assuming this function exists
-            ;;
-        5) # NEW CASE FOR APP STORE
-            app_store
-            ;;
-        6) # Old Animation option, now shifted
-            shooting_star
-            draw_ascii_art # Assuming this function exists (you had animate_ascii_art earlier)
-            ;;
-        7) # Old Check for Updates, now shifted
-            check_for_updates
-            ;;
-        8) # Old Reinstall Panes, now shifted
-            ReInstall
-            ;;
-        9) # Old Exit, now shifted
-            clear
-            echo "Exiting Panes..."
+    draw_desktop # This populates INSTALLED_APPS_GLOBAL and prints desktop options
+
+    num_fixed_options=9 # Options 1-9 (1-9 are hardcoded functions)
+    installed_apps_start_num=10 # Installed apps start from this number
+    num_installed_apps=${#INSTALLED_APPS_GLOBAL[@]}
+
+    read -r -p "Enter your choice: " option # Allow multi-digit input, with prompt
+
+    # First, validate input is a number
+    if ! [[ "$option" =~ ^[0-9]+$ ]]; then
+        echo "Invalid input. Please enter a number."
+        sleep 1
+        continue # Go back to drawing the desktop
+    fi
+
+    # Now, handle the numerical options using if/elif
+    if (( option >= 1 && option <= num_fixed_options )); then
+        # Handle fixed options (1-9)
+        case $option in
+            1)
+                text_editor
+                ;;
+            2)
+                calculator
+                ;;
+            3)
+                file_viewer
+                ;;
+            4)
+                guessing_game
+                ;;
+            5)
+                app_store
+                ;;
+            6)
+                shooting_star
+                draw_ascii_art
+                ;;
+            7)
+                check_for_updates
+                ;;
+            8)
+                ReInstall
+                ;;
+            9)
+                clear
+                echo "Exiting Panes..."
+                sleep 1
+                exit 0
+                ;;
+        esac
+    elif (( option >= installed_apps_start_num && option < installed_apps_start_num + num_installed_apps )); then
+        # Handle dynamically added installed applications (numbers 10 and above)
+        selected_index_for_array=$((option - installed_apps_start_num))
+        selected_app_filename="${INSTALLED_APPS_GLOBAL[selected_index_for_array]}"
+
+        if [ -n "$selected_app_filename" ]; then
+            app_menu "$selected_app_filename"
+        else
+            echo "Error: Could not determine selected application."
             sleep 1
-            exit 0
-            ;;
-        *)
-            echo "Invalid option. Please select [1] through [9]."
-            sleep 1
-            ;;
-    esac
+        fi
+    # NEW: Explicit elif for invalid numeric options
+    elif (( option < 1 || (option > num_fixed_options && option < installed_apps_start_num) || option >= installed_apps_start_num + num_installed_apps )); then
+        echo "Invalid option. Please select a valid number from the list."
+        sleep 1
+    fi
 done
