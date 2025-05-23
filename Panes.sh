@@ -6,7 +6,7 @@ UPDATE_DESC="Panes OS 1.051 Codenamed Beamed is an update that brings online app
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.05
+VERSION=1.051
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
