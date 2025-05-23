@@ -183,192 +183,7 @@ app_menu() {
     done
 }
 
-# New function for the Developer Update
-dev_update() {
-    clear
-    echo "==================================="
-    echo "|     Panes Developer Update      |"
-    echo "==================================="
-    echo "This update channel requires a developer key."
-    read -r -s -p "Enter Developer Key: " dev_key # -s for silent input
-    echo # Newline after silent input
 
-    local dev_key_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/DeveloperKey"
-    local env_updater_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/EnvironmentUpdater.sh"
-    local panes_glimpse_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh"
-
-    local temp_dev_key_file="/tmp/panes_devkey_$$_$(date +%s).txt"
-    local temp_env_updater_file="/tmp/panes_env_updater_$$_$(date +%s).sh"
-    local temp_panes_glimpse_file="/tmp/panes_glimpse_$$_$(date +%s).sh"
-
-    echo "Verifying developer key..."
-    if ! curl -s "$dev_key_url" -o "$temp_dev_key_file"; then
-        echo "Error: Could not download developer key for verification. Check internet connection or URL."
-        rm -f "$temp_dev_key_file" 2>/dev/null
-        echo "Press [Enter] to return to the main menu."
-        read -r < /dev/tty
-        return
-    fi
-
-    local stored_dev_key=$(cat "$temp_dev_key_file" | xargs) # Use xargs to trim whitespace/newlines
-    rm -f "$temp_dev_key_file" 2>/dev/null # Clean up temp file
-
-    if [[ "$dev_key" != "$stored_dev_key" ]]; then
-        echo "Developer Key Mismatch. Access Denied."
-        echo "Press [Enter] to return to the main menu."
-        read -r < /dev/tty
-        return
-    fi
-
-    echo "Developer Key Accepted. Proceeding with Developer Update..."
-    sleep 1
-
-    # Step 1: Download and run EnvironmentUpdater.sh
-    echo "Downloading EnvironmentUpdater.sh..."
-    if ! curl -s "$env_updater_url" -o "$temp_env_updater_file"; then
-        echo "Error: Failed to download EnvironmentUpdater.sh. Aborting."
-        rm -f "$temp_env_updater_file" 2>/dev/null
-        echo "Press [Enter] to return to the main menu."
-        read -r < /dev/tty
-        return
-    fi
-    chmod +x "$temp_env_updater_file"
-
-    echo "Running EnvironmentUpdater.sh..."
-    ( bash "$temp_env_updater_file" ) # Run in a subshell, like an app
-    local env_updater_exit_code=$?
-    rm -f "$temp_env_updater_file" 2>/dev/null # Clean up temp file
-
-    if [ "$env_updater_exit_code" -ne 0 ]; then
-        echo "EnvironmentUpdater.sh completed with errors (Exit Code: $env_updater_exit_code). Update may be incomplete."
-        echo "Press [Enter] to continue or to return to the main menu."
-        read -r < /dev/tty
-        return
-    else
-        echo "EnvironmentUpdater.sh completed successfully."
-    fi
-
-    # Step 2: Download and run PanesGlimpse.sh (which will likely replace Panes.sh)
-    echo "Downloading PanesGlimpse.sh..."
-    if ! curl -s "$panes_glimpse_url" -o "$temp_panes_glimpse_file"; then
-        echo "Error: Failed to download PanesGlimpse.sh. Aborting."
-        rm -f "$temp_panes_glimpse_file" 2>/dev/null
-        echo "Press [Enter] to return to the main menu."
-        read -r < /dev/tty
-        return
-    fi
-    chmod +x "$temp_panes_glimpse_file"
-
-    echo "Running PanesGlimpse.sh to finalize update..."
-    # Execute PanesGlimpse.sh. This script is expected to handle its own restart/exit logic
-    # as it's replacing the core OS. We use 'exec' to replace the current shell process.
-    # This means Panes.sh will exit and PanesGlimpse.sh will take over.
-    exec bash "$temp_panes_glimpse_file"
-
-    # The script should not reach here if exec was successful
-    echo "Error: Failed to execute PanesGlimpse.sh unexpectedly."
-    echo "Press [Enter] to return to the main menu."
-    read -r < /dev/tty
-}
-
-# Modified check_for_updates function
-check_for_updates() {
-    clear
-    echo "==================================="
-    echo "|        Checking for Updates     |"
-    echo "==================================="
-    echo "[1] Update Panes.sh (Standard)"
-    echo "[2] Check and Update Applications"
-    echo "[3] Developer Update (Requires Key)" # New option
-    echo "[0] Back to Main Menu"
-    echo "==================================="
-    read -r -p "Enter your choice: " update_option < /dev/tty
-
-    case $update_option in
-        1)
-            echo "Checking for Panes.sh standard update..."
-            local LOCAL_VERSION="$VERSION"
-            local REMOTE_VERSION=""
-            local REMOTE_TITLE=""
-            local REMOTE_DESC=""
-            local VERIFICATION_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            local TEMP_UPDATE_FILE="/tmp/Panes_standard_update.sh"
-
-            if ! curl -s "$VERIFICATION_URL" -o "$TEMP_UPDATE_FILE"; then
-                echo "Error: Could not download remote Panes.sh for version check."
-                echo "Press [Enter] to return."
-                read -r < /dev/tty
-                return
-            fi
-
-            REMOTE_VERSION=$(grep '^VERSION=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
-            REMOTE_TITLE=$(grep '^UPDATE_TITLE=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
-            REMOTE_DESC=$(grep '^UPDATE_DESC=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
-
-            rm -f "$TEMP_UPDATE_FILE"
-
-            if [ -z "$REMOTE_VERSION" ]; then
-                echo "Error: Could not determine remote Panes.sh version."
-                echo "Press [Enter] to return."
-                read -r < /dev/tty
-                return
-            fi
-
-            echo "Local Panes.sh Version: $LOCAL_VERSION"
-            echo "Remote Panes.sh Version: $REMOTE_VERSION"
-            echo "Update Title: $REMOTE_TITLE"
-            echo "Update Description: $REMOTE_DESC"
-
-            if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
-                echo "A new Panes.sh version ($REMOTE_VERSION) is available."
-                read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
-                if [[ "$confirm_update" == "y" || "$confirm_update" == "Y" ]]; then
-                    echo "Updating Panes.sh..."
-                    local total_steps=10
-                    local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 0.1 / $total_steps" | bc -l)
-
-                    for ((i=0; i<=total_steps; i++)); do
-                        sleep "$step_duration"
-                        printf "\rProgress: ["
-                        for ((j=0; j<i; j++)); do printf "#"; done
-                        for ((j=i; j<total_steps; j++)); do printf " "; done
-                        printf "] %d%%" "$((i * 100 / total_steps))"
-                    done
-                    printf "\r"
-
-                    if curl -s "$DOWNLOAD_URL" -o "$PARENT_DIR/Panes.sh"; then
-                        echo "Panes.sh updated successfully! Please restart Panes."
-                        # Recommend exiting here so the user restarts the updated script
-                        exit 0
-                    else
-                        echo "Error: Failed to download Panes.sh update."
-                    fi
-                else
-                    echo "Panes.sh update cancelled by user."
-                fi
-            else
-                echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
-            fi
-            echo "Press [Enter] to return to the desktop."
-            read -r < /dev/tty
-            ;;
-        2)
-            check_application_updates
-            ;;
-        3) # New case for Developer Update
-            dev_update
-            ;;
-        0)
-            echo "Returning to main menu."
-            sleep 1
-            ;;
-        *)
-            echo "Invalid option. Please choose 1, 2, 3, or 0."
-            sleep 1
-            ;;
-    esac
-}
 
 # Function to add a shooting star animation
 shooting_star() {
@@ -761,6 +576,93 @@ check_application_updates() {
     fi
     echo "Press [Enter] to return to the main menu."
     read -r
+}
+# New function for the Developer Update
+dev_update() {
+    clear
+    echo "==================================="
+    echo "|     Panes Developer Update      |"
+    echo "==================================="
+    echo "This update channel requires a developer key."
+    read -r -s -p "Enter Developer Key: " dev_key # -s for silent input
+    echo # Newline after silent input
+
+    local dev_key_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/DeveloperKey"
+    local env_updater_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/EnvironmentUpdater.sh"
+    local panes_glimpse_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh"
+
+    local temp_dev_key_file="/tmp/panes_devkey_$$_$(date +%s).txt"
+    local temp_env_updater_file="/tmp/panes_env_updater_$$_$(date +%s).sh"
+    local temp_panes_glimpse_file="/tmp/panes_glimpse_$$_$(date +%s).sh"
+
+    echo "Verifying developer key..."
+    if ! curl -s "$dev_key_url" -o "$temp_dev_key_file"; then
+        echo "Error: Could not download developer key for verification. Check internet connection or URL."
+        rm -f "$temp_dev_key_file" 2>/dev/null
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+
+    local stored_dev_key=$(cat "$temp_dev_key_file" | xargs) # Use xargs to trim whitespace/newlines
+    rm -f "$temp_dev_key_file" 2>/dev/null # Clean up temp file
+
+    if [[ "$dev_key" != "$stored_dev_key" ]]; then
+        echo "Developer Key Mismatch. Access Denied."
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+
+    echo "Developer Key Accepted. Proceeding with Developer Update..."
+    sleep 1
+
+    # Step 1: Download and run EnvironmentUpdater.sh
+    echo "Downloading EnvironmentUpdater.sh..."
+    if ! curl -s "$env_updater_url" -o "$temp_env_updater_file"; then
+        echo "Error: Failed to download EnvironmentUpdater.sh. Aborting."
+        rm -f "$temp_env_updater_file" 2>/dev/null
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+    chmod +x "$temp_env_updater_file"
+
+    echo "Running EnvironmentUpdater.sh..."
+    ( bash "$temp_env_updater_file" ) # Run in a subshell, like an app
+    local env_updater_exit_code=$?
+    rm -f "$temp_env_updater_file" 2>/dev/null # Clean up temp file
+
+    if [ "$env_updater_exit_code" -ne 0 ]; then
+        echo "EnvironmentUpdater.sh completed with errors (Exit Code: $env_updater_exit_code). Update may be incomplete."
+        echo "Press [Enter] to continue or to return to the main menu."
+        read -r < /dev/tty
+        return
+    else
+        echo "EnvironmentUpdater.sh completed successfully."
+    fi
+
+    # Step 2: Download and run PanesGlimpse.sh (which will likely replace Panes.sh)
+    echo "Downloading PanesGlimpse.sh..."
+    if ! curl -s "$panes_glimpse_url" -o "$temp_panes_glimpse_file"; then
+        echo "Error: Failed to download PanesGlimpse.sh. Aborting."
+        rm -f "$temp_panes_glimpse_file" 2>/dev/null
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+    chmod +x "$temp_panes_glimpse_file"
+
+    echo "Running PanesGlimpse.sh to finalize update..."
+    # Execute PanesGlimpse.sh. This script is expected to handle its own restart/exit logic
+    # as it's replacing the core OS. We use 'exec' to replace the current shell process.
+    # This means Panes.sh will exit and PanesGlimpse.sh will take over.
+    exec bash "$temp_panes_glimpse_file"
+
+    # The script should not reach here if exec was successful
+    echo "Error: Failed to execute PanesGlimpse.sh unexpectedly."
+    echo "Press [Enter] to return to the main menu."
+    read -r < /dev/tty
 }
 
 # Main check_for_updates function
