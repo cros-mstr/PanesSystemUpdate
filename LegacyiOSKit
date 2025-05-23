@@ -1,0 +1,2 @@
+echo "Now downloading LukeGZDs Legacy iOS Kit..."
+cd;(git clone https://github.com/LukeZGD/Legacy-iOS-Kit.git)
