@@ -666,26 +666,8 @@ dev_update() {
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
 }
-    echo "Running PanesGlimpse.sh to finalize update..."
-    # Execute PanesGlimpse.sh. This script is expected to handle its own restart/exit logic
-    # as it's replacing the core OS. We use 'exec' to replace the current shell process.
-    # This means Panes.sh will exit and PanesGlimpse.sh will take over, and then PanesGlimpse.sh
-    # will copy itself to Panes.sh's location and restart.
-    exec bash "$temp_panes_glimpse_file"
+    
 
-    # The script should not reach here if exec was successful
-    echo "Error: Failed to execute PanesGlimpse.sh unexpectedly."
-    echo "Press [Enter] to return to the main menu."
-    read -r < /dev/tty
-}
-CRITICAL: The PanesGlimpse.sh file itself must contain this logic
-You need to make sure the PanesGlimpse.sh file that's hosted in your GitHub repository has the following structure and logic. This is the script that dev_update downloads and executes.
-
-Recommended PanesGlimpse.sh content:
-
-Bash
-
-#!/bin/bash
 
 # ==============================================================================
 # PanesGlimpse.sh - The new version of Panes.sh downloaded via Developer Update
@@ -693,8 +675,7 @@ Bash
 # ==============================================================================
 
 # Redefine PARENT_DIR within this script, as it's running independently
-# This ensures it knows where the original Panes.sh is located.
-PARENT_DIR="$(dirname "$0")" # This will be the /tmp directory where it was downloaded
+# This ensures it knows where the original Panes.sh is located. # This will be the /tmp directory where it was downloaded
 
 # Determine the actual path of the currently running main Panes.sh script
 # This assumes Panes.sh is in the same directory as this PanesGlimpse.sh was meant to be run from.
