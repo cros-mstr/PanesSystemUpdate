@@ -1,6 +1,57 @@
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 #!/bin/bash
+
+# ==============================================================================
+# PanesGlimpse.sh - The new version of Panes.sh downloaded via Developer Update
+# This script's purpose is to replace the main Panes.sh and then restart it.
+# This entire script's content should be the desired new version of Panes.sh.
+# ==============================================================================
+
+# Ensure the original Panes.sh parent directory was passed as an argument
+if [ -z "$1" ]; then
+    echo "Error: Original Panes.sh directory not provided to PanesGlimpse.sh. Aborting update."
+    exit 1
+fi
+
+# The first argument ($1) is the original PARENT_DIR from the calling Panes.sh
+ORIGINAL_PANES_PARENT_DIR="$1"
+TARGET_PANES_PATH="$ORIGINAL_PANES_PARENT_DIR/Panes.sh"
+
+echo "Panes Update: Starting Glimpse update process."
+echo "Panes Update: Attempting to replace: $TARGET_PANES_PATH"
+
+# Copy this currently running script ($0) to the target Panes.sh path
+# This effectively makes this temporary PanesGlimpse.sh the new Panes.sh
+if cp "$0" "$TARGET_PANES_PATH"; then
+    echo "Panes Update: Successfully copied new Panes.sh to $TARGET_PANES_PATH."
+    chmod +x "$TARGET_PANES_PATH"
+    echo "Panes Update: Set execute permissions on $TARGET_PANES_PATH."
+    echo "Panes Update: Update complete. Restarting Panes..."
+    sleep 2
+    
+    # Execute the newly updated Panes.sh.
+    # 'exec' replaces the current shell process with the new one,
+    # so Panes will restart as the updated version.
+    exec bash "$TARGET_PANES_PATH"
+
+    # This part should ideally not be reached if exec is successful
+    echo "Panes Update: Error - Failed to execute the new Panes.sh!"
+    exit 1
+else
+    echo "Panes Update: Error - Failed to copy new Panes.sh to $TARGET_PANES_PATH."
+    echo "Panes Update: Check permissions or disk space. Update failed."
+    exit 1
+fi
+
+# ==============================================================================
+# IMPORTANT: The rest of THIS FILE (PanesGlimpse.sh)
+# should contain the complete, new code for your Panes.sh operating system.
+# This means, everything below this line in the *actual file on GitHub*
+# should be the updated Panes.sh script.
+# ==============================================================================
+
+
 cd "$(dirname "$0")"
 UPDATE_TITLE="Panes OS 1.052 "BugSquasher Glimpse" "
 UPDATE_DESC="Panes OS 1.052 is integrated into the public DTC repository. Expect bugs, glitches, and features not present in mainstream PanesOs."
@@ -8,7 +59,7 @@ UPDATE_DESC="Panes OS 1.052 is integrated into the public DTC repository. Expect
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.052
+VERSION=1
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
@@ -666,81 +717,6 @@ dev_update() {
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
 }
-    
-
-
-# ==============================================================================
-# PanesGlimpse.sh - The new version of Panes.sh downloaded via Developer Update
-# This script's purpose is to replace the main Panes.sh and then restart it.
-# ==============================================================================
-
-# Redefine PARENT_DIR within this script, as it's running independently
-# This ensures it knows where the original Panes.sh is located. # This will be the /tmp directory where it was downloaded
-
-# Determine the actual path of the currently running main Panes.sh script
-# This assumes Panes.sh is in the same directory as this PanesGlimpse.sh was meant to be run from.
-# A more robust way might be to pass the original Panes.sh path as an argument to PanesGlimpse.sh
-# but for now, we'll assume it's PARENT_DIR of the *calling* script.
-# Let's derive it from where the original Panes.sh would be.
-# If Panes.sh is always in the same dir as the BootFolder, this is usually:
-# ORIGINAL_PANES_PATH="$(dirname "$0")/Panes.sh" # This is if PanesGlimpse.sh is executed from original location
-# OR
-# If PanesGlimpse.sh is executed from /tmp, it needs to know the original location.
-# A common method is to pass it as an argument or know its relative path to a fixed point.
-# For simplicity, let's assume it's in the same directory as the Panes script itself.
-# The original Panes.sh's path is "$PARENT_DIR/Panes.sh" from the perspective of the *outer* script.
-# When PanesGlimpse.sh is run via `exec bash "$temp_panes_glimpse_file"`, its $0 is the temporary path.
-# We need the path to the *original* Panes.sh.
-
-# Let's assume the original Panes.sh is always in the directory of your "BOS" project.
-# You need to define this path consistently.
-# Based on your initial error: /Users/joshdomino/Downloads/BOS/Pane Developer/BootFolder/Panes.sh
-# So, the main Panes.sh is at: /Users/joshdomino/Downloads/BOS/Pane Developer/Panes.sh
-# Or wherever your primary Panes.sh file resides.
-# Let's pass the original Panes.sh path as an argument to PanesGlimpse.sh from dev_update if needed.
-# But if Panes.sh usually calls it, it will pass the correct PARENT_DIR.
-
-# Let's rely on PARENT_DIR from the original Panes.sh being passed to dev_update,
-# and dev_update passing it to PanesGlimpse.sh.
-# This requires a minor modification to how dev_update calls PanesGlimpse.sh.
-
-# --- MODIFIED CALL TO PANESGLIMPSE.SH IN DEV_UPDATE (THIS IS IN YOUR MAIN PANES.SH) ---
-# Previous: exec bash "$temp_panes_glimpse_file"
-# New:      exec bash "$temp_panes_glimpse_file" "$PARENT_DIR"
-# This passes the original Panes.sh's parent directory as the first argument to PanesGlimpse.sh.
-
-# --- BACK TO PANESGLIMPSE.SH CONTENT ---
-# In PanesGlimpse.sh:
-if [ -z "$1" ]; then
-    echo "Error: Original Panes.sh directory not provided to PanesGlimpse.sh. Aborting update."
-    exit 1
-fi
-
-ORIGINAL_PANES_PARENT_DIR="$1"
-TARGET_PANES_PATH="$ORIGINAL_PANES_PARENT_DIR/Panes.sh"
-
-echo "PanesGlimpse.sh: Starting update process."
-echo "PanesGlimpse.sh: Attempting to replace: $TARGET_PANES_PATH"
-
-# Copy this currently running script ($0) to the target Panes.sh path
-if cp "$0" "$TARGET_PANES_PATH"; then
-    echo "PanesGlimpse.sh: Successfully copied new Panes.sh to $TARGET_PANES_PATH."
-    chmod +x "$TARGET_PANES_PATH"
-    echo "PanesGlimpse.sh: Set execute permissions on $TARGET_PANES_PATH."
-    echo "PanesGlimpse.sh: Update complete. Restarting Panes..."
-    sleep 2
-    
-    # Execute the newly updated Panes.sh
-    exec bash "$TARGET_PANES_PATH"
-
-    # This part should ideally not be reached if exec is successful
-    echo "PanesGlimpse.sh: Error - Failed to execute the new Panes.sh!"
-    exit 1
-else
-    echo "PanesGlimpse.sh: Error - Failed to copy new Panes.sh to $TARGET_PANES_PATH."
-    echo "PanesGlimpse.sh: Check permissions or disk space. Update failed."
-    exit 1
-fi
 # Modified check_for_updates function
 check_for_updates() {
     clear
