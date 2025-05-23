@@ -2,8 +2,8 @@
 # Script to launch a text-based document editor (nano by default)
 PANESType=StatefulApplicationThirdPartySource
 PANESSource=ThirdParty
-UPDATE_TITLE="CALCULATOR 1"
-UPDATE_DESC="A Simple calculator for Panes, straight from the main source."
+UPDATE_TITLE="NaViDText Formatting and Utilities"
+UPDATE_DESC="Nano, Vi, and Vim right from your Panes installation! "
 VERSION=1
 # Check if nano is installed
 if command -v nano &> /dev/null; then
