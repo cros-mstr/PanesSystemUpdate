@@ -1,5 +1,7 @@
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
+#PanesDR Coming Soon
+#Bugs, bugs, BUGS!!!
 #!/bin/bash
 cd "$(dirname "$0")"
 UPDATE_TITLE="Panes OS 1.052 "BugSquasher Glimpse" "
@@ -577,7 +579,7 @@ check_application_updates() {
     echo "Press [Enter] to return to the main menu."
     read -r
 }
-# New function for the Developer Update
+# New function for the Developer Update (keep this as is, defined before check_for_updates)
 dev_update() {
     clear
     echo "==================================="
@@ -604,8 +606,8 @@ dev_update() {
         return
     fi
 
-    local stored_dev_key=$(cat "$temp_dev_key_file" | xargs) # Use xargs to trim whitespace/newlines
-    rm -f "$temp_dev_key_file" 2>/dev/null # Clean up temp file
+    local stored_dev_key=$(cat "$temp_dev_key_file" | xargs)
+    rm -f "$temp_dev_key_file" 2>/dev/null
 
     if [[ "$dev_key" != "$stored_dev_key" ]]; then
         echo "Developer Key Mismatch. Access Denied."
@@ -617,7 +619,6 @@ dev_update() {
     echo "Developer Key Accepted. Proceeding with Developer Update..."
     sleep 1
 
-    # Step 1: Download and run EnvironmentUpdater.sh
     echo "Downloading EnvironmentUpdater.sh..."
     if ! curl -s "$env_updater_url" -o "$temp_env_updater_file"; then
         echo "Error: Failed to download EnvironmentUpdater.sh. Aborting."
@@ -629,9 +630,9 @@ dev_update() {
     chmod +x "$temp_env_updater_file"
 
     echo "Running EnvironmentUpdater.sh..."
-    ( bash "$temp_env_updater_file" ) # Run in a subshell, like an app
+    ( bash "$temp_env_updater_file" )
     local env_updater_exit_code=$?
-    rm -f "$temp_env_updater_file" 2>/dev/null # Clean up temp file
+    rm -f "$temp_env_updater_file" 2>/dev/null
 
     if [ "$env_updater_exit_code" -ne 0 ]; then
         echo "EnvironmentUpdater.sh completed with errors (Exit Code: $env_updater_exit_code). Update may be incomplete."
@@ -642,7 +643,6 @@ dev_update() {
         echo "EnvironmentUpdater.sh completed successfully."
     fi
 
-    # Step 2: Download and run PanesGlimpse.sh (which will likely replace Panes.sh)
     echo "Downloading PanesGlimpse.sh..."
     if ! curl -s "$panes_glimpse_url" -o "$temp_panes_glimpse_file"; then
         echo "Error: Failed to download PanesGlimpse.sh. Aborting."
@@ -654,162 +654,107 @@ dev_update() {
     chmod +x "$temp_panes_glimpse_file"
 
     echo "Running PanesGlimpse.sh to finalize update..."
-    # Execute PanesGlimpse.sh. This script is expected to handle its own restart/exit logic
-    # as it's replacing the core OS. We use 'exec' to replace the current shell process.
-    # This means Panes.sh will exit and PanesGlimpse.sh will take over.
     exec bash "$temp_panes_glimpse_file"
 
-    # The script should not reach here if exec was successful
     echo "Error: Failed to execute PanesGlimpse.sh unexpectedly."
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
 }
 
-# Main check_for_updates function
+# Modified check_for_updates function
 check_for_updates() {
     clear
-    echo "============================="
-    echo "|     Check for Updates     |"
-    echo "============================="
-    echo "Checking for updates..."
-    sleep 1
-    echo "Available update options:"
-    echo "1. Regular update (stable version) - Panes.sh"
-    echo "2. Dev Seeding (potentially unstable, latest features)"
-    echo "3. Check and Update Applications" # New option
-    read -p "Select an update type (1, 2, or 3): " update_choice
+    echo "==================================="
+    echo "|        Checking for Updates     |"
+    echo "==================================="
+    echo "[1] Update Panes.sh (Standard)"
+    echo "[2] Check and Update Applications"
+    echo "[3] Developer Update (Requires Key)" # <-- Developer Update option here
+    echo "[0] Back to Main Menu"
+    echo "==================================="
+    read -r -p "Enter your choice: " update_option < /dev/tty
 
-    case "$update_choice" in
+    case $update_option in
         1)
-            # Main Panes.sh update logic
-            # Define the URL for the remote Panes.sh script
-            REMOTE_PANES_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            LOCAL_VERSION="$VERSION" # Assuming VERSION is defined globally or in the calling script
+            echo "Checking for Panes.sh standard update..."
+            local LOCAL_VERSION="$VERSION"
+            local REMOTE_VERSION=""
+            local REMOTE_TITLE=""
+            local REMOTE_DESC=""
+            local VERIFICATION_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
+            local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
+            local TEMP_UPDATE_FILE="/tmp/Panes_standard_update.sh"
 
-            echo "Fetching remote Panes.sh version information..."
-            # Download the remote Panes.sh temporarily to extract its version and update info
-            if ! curl -s "$REMOTE_PANES_URL" -o /tmp/remote_Panes.sh; then
-                echo "Error: Could not download remote Panes.sh to check version."
-                echo "Update cancelled."
-                read -r -p "Press [Enter] to return to the desktop."
+            if ! curl -s "$VERIFICATION_URL" -o "$TEMP_UPDATE_FILE"; then
+                echo "Error: Could not download remote Panes.sh for version check."
+                echo "Press [Enter] to return."
+                read -r < /dev/tty
                 return
             fi
 
-            # Extract the VERSION
-            REMOTE_VERSION=$(grep '^VERSION=' /tmp/remote_Panes.sh | cut -d'=' -f2 | tr -d '"')
-            # Extract UPDATE_TITLE
-            REMOTE_UPDATE_TITLE=$(grep '^UPDATE_TITLE=' /tmp/remote_Panes.sh | cut -d'=' -f2 | tr -d '"')
-            # Extract UPDATE_DESC
-            REMOTE_UPDATE_DESC=$(grep '^UPDATE_DESC=' /tmp/remote_Panes.sh | cut -d'=' -f2 | tr -d '"')
+            REMOTE_VERSION=$(grep '^VERSION=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
+            REMOTE_TITLE=$(grep '^UPDATE_TITLE=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
+            REMOTE_DESC=$(grep '^UPDATE_DESC=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
+
+            rm -f "$TEMP_UPDATE_FILE"
 
             if [ -z "$REMOTE_VERSION" ]; then
-                echo "Error: Could not find VERSION in the remote Panes.sh script, or it's empty."
-                rm -f /tmp/remote_Panes.sh
-                echo "Update cancelled."
-                read -r -p "Press [Enter] to return to the desktop."
+                echo "Error: Could not determine remote Panes.sh version."
+                echo "Press [Enter] to return."
+                read -r < /dev/tty
                 return
             fi
 
-            rm -f /tmp/remote_Panes.sh # Clean up the temporary file
+            echo "Local Panes.sh Version: $LOCAL_VERSION"
+            echo "Remote Panes.sh Version: $REMOTE_VERSION"
+            echo "Update Title: $REMOTE_TITLE"
+            echo "Update Description: $REMOTE_DESC"
 
-            echo "Current Panes.sh Version: $LOCAL_VERSION"
-            echo "Available Panes.sh Version: $REMOTE_VERSION"
-
-            if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
-                echo -e "\n============================="
-                echo "|      Update Available     |"
-                echo "============================="
-                echo "Title: $REMOTE_UPDATE_TITLE"
-                echo "Description: $REMOTE_UPDATE_DESC"
-                echo "-----------------------------"
-                read -p "A new Panes.sh version ($REMOTE_VERSION) is available. Proceed with update? (y/n): " confirm_update
-                # REVISED LOGIC FOR CONFIRMATION
+            if (( $(echo "$REMOTE_VERSION" \> "$LOCAL_VERSION" | bc -l) )); then # Updated comparison for bc
+                echo "A new Panes.sh version ($REMOTE_VERSION) is available."
+                read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
                 if [[ "$confirm_update" == "y" || "$confirm_update" == "Y" ]]; then
-                    echo "Proceeding with Panes.sh update..."
-                    # Displaying a progress bar
-                    local total_steps=20 # Total number of steps to display progress
-                    local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
+                    echo "Updating Panes.sh..."
+                    local total_steps=10
+                    local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 0.1 / $total_steps" | bc -l)
+
                     for ((i=0; i<=total_steps; i++)); do
                         sleep "$step_duration"
                         printf "\rProgress: ["
-                        for ((j=0; j<i; j++)); do
-                            printf "#"
-                        done
-                        for ((j=i; j<total_steps; j++)); do
-                            printf " "
-                        done
+                        for ((j=0; j<i; j++)); do printf "#"; done
+                        for ((j=i; j<total_steps; j++)); do printf " "; done
                         printf "] %d%%" "$((i * 100 / total_steps))"
                     done
-                    git clone https://github.com/cros-mstr/PanesSystemUpdate.git
-                    echo -e "\n\nUpdate downloaded. Applying changes..."
+                    printf "\r"
 
-                    # Change directory back up one level and copy the script
-                    cd "$PARENT_DIR" || exit
-                    cp -f PanesSystemUpdate/Panes.sh BootFolder/Panes.sh # Copy only Panes.sh
-                    echo "Panes.sh copied."
-
-                    # Displaying a progress bar (again) for unpacking
-                    local total_steps_unpack=20 # Total number of steps to display progress
-                    local step_duration_unpack=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps_unpack" | bc -l) # Duration of each step
-                    for ((i=0; i<=total_steps_unpack; i++)); do
-                        sleep "$step_duration_unpack"
-                        printf "\rUnpacking: ["
-                        for ((j=0; j<i; j++)); do
-                            printf "#"
-                        done
-                        for ((j=i; j<total_steps_unpack; j++)); do
-                            printf " "
-                        done
-                        printf "] %d%%" "$((i * 10 / total_steps_unpack))"
-                    done
-                    cp -f -v PanesSystemUpdate/* BootFolder/ # Copy remaining files from cloned repo
-                    echo -e "\n\nUnpacked. Cleaning and applying changes..."
-                    # Clean up the cloned repository
-                    rm -rf PanesSystemUpdate
-                    echo "Panes.sh update applied successfully!"
-                else # User did not confirm 'y' or 'Y'
+                    if curl -s "$DOWNLOAD_URL" -o "$PARENT_DIR/Panes.sh"; then
+                        echo "Panes.sh updated successfully! Please restart Panes."
+                        exit 0
+                    else
+                        echo "Error: Failed to download Panes.sh update."
+                    fi
+                else
                     echo "Panes.sh update cancelled by user."
-                    read -r -p "Press [Enter] to return to the desktop."
-                    return
                 fi
             else
                 echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
             fi
             echo "Press [Enter] to return to the desktop."
-            read -r
+            read -r < /dev/tty
             ;;
         2)
-            echo "Performing Dev Seeding update..."
-            # Displaying a progress bar
-            local total_steps=20 # Total number of steps to display progress
-            local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 10 / $total_steps" | bc -l) # Duration of each step
-            for ((i=0; i<=total_steps; i++)); do
-                sleep "$step_duration"
-                printf "\rProgress: ["
-                for ((j=0; j<i; j++)); do
-                    printf "#"
-                done
-                for ((j=i; j<total_steps; j++)); do
-                    printf " "
-                done
-                printf "] %d%%" "$((i * 100 / total_steps))"
-            done
-
-            echo -e "\n\nUpdate downloaded. Applying changes..."
-
-            # Change directory back up one level and execute other scripts
-            cd "$PARENT_DIR" || exit
-            sudo bash Functions/EnvironmentUpdater.sh
-            sleep 20
-            sudo bash DevSeed.panes/Upgrader.sh
-            sleep 10
-            ;;
-        3)
-            # Call the new function for application updates
             check_application_updates
             ;;
+        3) # Call dev_update from here
+            dev_update
+            ;;
+        0)
+            echo "Returning to main menu."
+            sleep 1
+            ;;
         *)
-            echo "Invalid choice. Update cancelled."
+            echo "Invalid option. Please choose 1, 2, 3, or 0."
+            sleep 1
             ;;
     esac
 }
@@ -951,3 +896,4 @@ while true; do
         sleep 1
     fi
 done
+
