@@ -1,7 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-UPDATE_TITLE="Panes OS 1.05 "Beamed" "
-UPDATE_DESC="Panes OS 1.05 Codenamed Beamed is an update that brings online application download functionality to your Panes experience. 10.5 is fresh from DTC and is ready for public use."
+UPDATE_TITLE="Panes OS 1.051 "Beamed" "
+UPDATE_DESC="Panes OS 1.051 Codenamed Beamed is an update that brings online application download functionality to your Panes experience. 10.5 is fresh from DTC and is ready for public use."
 # Check if the script is running from a specific path
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
