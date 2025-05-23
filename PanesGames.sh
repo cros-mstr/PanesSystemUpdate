@@ -1,6 +1,10 @@
 #!/bin/bash
 # Script to launch a text-based terminal game
-
+PANESType=StatefulApplicationThirdPartySource
+PANESSource=FirstParty
+UPDATE_TITLE="PanesGames"
+UPDATE_DESC="CLI Games for your Panes Install!"
+VERSION=1
 # Try to find a common ncurses-based game
 if command -v ncurses-mines &> /dev/null; then
     GAME_CMD="ncurses-mines"
