@@ -8,7 +8,7 @@ UPDATE_DESC="Panes OS 1.052 is integrated into the public DTC repository. Expect
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1
+VERSION=1.052
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
