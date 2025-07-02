@@ -686,7 +686,8 @@ check_for_updates() {
             local REMOTE_DESC=""
             local VERIFICATION_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
             local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            local TEMP_UPDATE_FILE="/tmp/Panes_standard_update.sh"
+            local TEMP_UPDATE_FILE="/tmp/Panes_standard_update_$$.sh"
+            local CURRENT_SCRIPT_PATH="$0"
 
             if ! curl -s "$VERIFICATION_URL" -o "$TEMP_UPDATE_FILE"; then
                 echo "Error: Could not download remote Panes.sh for version check."
@@ -699,10 +700,9 @@ check_for_updates() {
             REMOTE_TITLE=$(grep '^UPDATE_TITLE=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
             REMOTE_DESC=$(grep '^UPDATE_DESC=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
 
-            rm -f "$TEMP_UPDATE_FILE"
-
             if [ -z "$REMOTE_VERSION" ]; then
                 echo "Error: Could not determine remote Panes.sh version."
+                rm -f "$TEMP_UPDATE_FILE"
                 echo "Press [Enter] to return."
                 read -r < /dev/tty
                 return
@@ -713,13 +713,14 @@ check_for_updates() {
             echo "Update Title: $REMOTE_TITLE"
             echo "Update Description: $REMOTE_DESC"
 
-            if (( $(echo "$REMOTE_VERSION" \> "$LOCAL_VERSION" | bc -l) )); then # Updated comparison for bc
+            if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
                 echo "A new Panes.sh version ($REMOTE_VERSION) is available."
                 read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
-                if [[ "$confirm_update" == "y" || "$confirm_update" == "Y" ]]; then
+                if [[ "$confirm_update" =~ ^[Yy]$ ]]; then
                     echo "Updating Panes.sh..."
                     local total_steps=100
-                    local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 20 / $total_steps" | bc -l)
+                    local total_duration=2   # Total duration for sleep in seconds — adjust as needed
+                    local step_duration=$(echo "$total_duration / $total_steps" | bc -l)
 
                     for ((i=0; i<=total_steps; i++)); do
                         sleep "$step_duration"
@@ -728,13 +729,40 @@ check_for_updates() {
                         for ((j=i; j<total_steps; j++)); do printf " "; done
                         printf "] %d%%" "$((i * 100 / total_steps))"
                     done
-                    printf "\r"
+                    printf "\r\n"
 
-                    if curl -s "$DOWNLOAD_URL" -o "$PARENT_DIR/Panes.sh"; then
-                        echo "Panes.sh updated successfully! Please restart Panes."
-                        exit 0
+                    # Download the updated script to a temp file first
+                    local NEW_SCRIPT_TEMP="/tmp/Panes_new_script_$$.sh"
+                    if curl -s "$DOWNLOAD_URL" -o "$NEW_SCRIPT_TEMP"; then
+                        # Validate update by checking VERSION field in downloaded file
+                        local NEW_VERSION_CHECK=$(grep '^VERSION=' "$NEW_SCRIPT_TEMP" | cut -d'=' -f2 | tr -d '"')
+                        if [ "$NEW_VERSION_CHECK" != "$REMOTE_VERSION" ]; then
+                            echo "Error: Downloaded script version mismatch. Update aborted."
+                            rm -f "$NEW_SCRIPT_TEMP" "$TEMP_UPDATE_FILE"
+                            echo "Press [Enter] to return."
+                            read -r < /dev/tty
+                            return
+                        fi
+
+                        # Replace the running script atomically
+                        if mv "$NEW_SCRIPT_TEMP" "$CURRENT_SCRIPT_PATH" && chmod +x "$CURRENT_SCRIPT_PATH"; then
+                            echo "Panes.sh updated successfully to version $NEW_VERSION_CHECK!"
+                            echo "Please restart Panes.sh to run the updated version."
+                            rm -f "$TEMP_UPDATE_FILE"
+                            exit 0
+                        else
+                            echo "Error: Failed to replace the existing Panes.sh script. Update aborted."
+                            rm -f "$NEW_SCRIPT_TEMP" "$TEMP_UPDATE_FILE"
+                            echo "Press [Enter] to return."
+                            read -r < /dev/tty
+                            return
+                        fi
                     else
-                        echo "Error: Failed to download Panes.sh update."
+                        echo "Error: Failed to download the updated script. Update aborted."
+                        rm -f "$TEMP_UPDATE_FILE"
+                        echo "Press [Enter] to return."
+                        read -r < /dev/tty
+                        return
                     fi
                 else
                     echo "Panes.sh update cancelled by user."
@@ -742,13 +770,14 @@ check_for_updates() {
             else
                 echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
             fi
+            rm -f "$TEMP_UPDATE_FILE"
             echo "Press [Enter] to return to the desktop."
             read -r < /dev/tty
             ;;
         2)
             check_application_updates
             ;;
-        3) # Call dev_update from here
+        3)
             dev_update
             ;;
         0)
