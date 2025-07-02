@@ -1,13 +1,13 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-UPDATE_TITLE="Panes OS 1.051 "Beamed" "
-UPDATE_DESC="Panes OS 1.051 Codenamed Beamed is an update that brings online application download functionality to your Panes experience. 10.5 is fresh from DTC and is ready for public use."
+UPDATE_TITLE="Panes OS 1.052 "OnTrack" "
+UPDATE_DESC="Panes OS 1.052 Codenamed OnTrack is an update which fixes the previous Update (ToDate) function and patches a bug where the update wouldn't apply after downloading."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.051
+VERSION=1.052
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
