@@ -4,6 +4,7 @@ cd "$(dirname "$0")"
 #1052 beamed
 #1053 ontrack
 #1054 appenhanced
+#Coming Soon in Beta: Installer
 UPDATE_TITLE="Panes OS 1.053 "AppEnhanced" "
 UPDATE_DESC="Panes OS 1.052 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
 #PanesDR Coming Soon
