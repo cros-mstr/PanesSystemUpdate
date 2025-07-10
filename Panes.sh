@@ -66,7 +66,7 @@ fi
 draw_desktop() {
     clear
     echo "============================="
-    echo "|     Panes $VERSION        |"
+    echo "|    Panes $VERSION        |"
     echo "|---------------------------|"
     echo "|  [1] Text Editor          |"
     echo "|  [2] Calculator           |"
@@ -81,7 +81,7 @@ draw_desktop() {
     echo "|   Installed Applications  |"
     echo "|---------------------------|"
 
-    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local app_dir="./Applications" # Changed to INSTALLED_DIR
     local app_counter=10 # Start numbering installed apps from 10
     local temp_app_list="/tmp/panes_installed_apps_$$_$(date +%s).txt" # Temporary file
 
@@ -151,7 +151,7 @@ uninstall_application() {
 # Menu for an installed application (this calls launch_application and uninstall_application)
 app_menu() {
     local selected_app_filename="$1"
-    local app_full_path="$PARENT_DIR/BootFolder/Applications/$selected_app_filename"
+    local app_full_path="./Applications/$selected_app_filename"
     local app_display_name=$(basename "$selected_app_filename" .sh)
     while true; do
         clear
@@ -463,7 +463,7 @@ check_application_updates() {
     echo "==================================="
     echo "|   Checking Application Updates    |"
     echo "==================================="
-    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local app_dir="./Applications"
     local updated_any_app=false
 
     if [ ! -d "$app_dir" ]; then
@@ -933,4 +933,3 @@ while true; do
         sleep 1
     fi
 done
-
