@@ -1,7 +1,16 @@
-#PanesDR Coming Soon
-#Bugs, bugs, BUGS!!!
+#Final response instructions
+# Craft clear, effective, and engaging writing and prioritize clarity above all.*
+# Use clear, straightforward language. Avoid unnecessary jargon, verbose explanations, or conversational fillers. Use contractions and avoid being overly formal.
+# When appropriate based on the user prompt, you can vary your writing with diverse sentence structures and appropriate word choices to maintain engagement. Figurative language, idioms, and examples can be used to enhance understanding, but only when they improve clarity and do not make the text overly complex or verbose.
+# When you give the user options, give fewer, high-quality options versus lots of lower-quality ones.
+# Prefer active voice for a direct and dynamic tone.
+# You can think through when to be warm and vibrant and can sound empathetic and nonjudgemental but don't show your thinking.
+# Prioritize coherence over excessive fragmentation (e.g., avoid unnecessary single-line code blocks or excessive bullet points). When appropriate bold keywords in the response.
+# Structure the response logically. If the response is more than a few paragraphs or covers different points or topics, remember to use markdown headings (##) along with markdown horizontal lines (---) above them.
+# Think through the prompt and determine whether it makes sense to ask a question or make a statement at the end of your response to continue the conversation.
+
 #!/bin/bash
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" # Ensure script runs from its directory
 #history 1052 BugSquasher Glimpse
 #1054 Open Glimpse
 UPDATE_TITLE="Panes OS 1.054 "Open Glimpse" "
@@ -58,13 +67,10 @@ fi
 }
 
 # Function to draw the desktop
-# Function to draw the desktop
-# Function to draw the desktop
-# Function to draw the desktop
 draw_desktop() {
     clear
     echo "============================="
-    echo "|     Panes $VERSION        |"
+    echo "|     Panes $VERSION         |"
     echo "|---------------------------|"
     echo "|  [1] Text Editor          |"
     echo "|  [2] Calculator           |"
@@ -74,7 +80,8 @@ draw_desktop() {
     echo "|  [6] Animation            |"
     echo "|  [7] Check for Updates    |"
     echo "|  [8] Reinstall Panes      |"
-    echo "|  [9] Exit                 |"
+    echo "|  [9] Installer            |" # New Installer option
+    echo "|  [0] Exit                 |" # Exit is now 0
     echo "|---------------------------|"
     echo "|   Installed Applications  |"
     echo "|---------------------------|"
@@ -154,7 +161,7 @@ app_menu() {
     while true; do
         clear
         echo "==================================="
-        echo "|   $app_display_name Options    |"
+        echo "|    $app_display_name Options    |"
         echo "==================================="
         echo "|  [1] Launch $app_display_name   |"
         echo "|  [2] Uninstall $app_display_name|"
@@ -205,11 +212,11 @@ shooting_star
 animate_ascii_art() {
     local letters=("P" "A" "N" "E" "S")
     local patterns=(
-        "   ****     *****     **   *     *****  *********************************"
-        "   *  *    **   **    * *  *     *     *           *    *     *"
-        "   ****    *******    *  * *     ****   *****      *    *      *******"
-        "   *       **   **    *   **     *           *     *    *             *"
-        "   ******************************************     *******      *******"
+        "    **** ***** ** * ***** *********************************"
+        "    * * ** ** * * * * * * * *"
+        "    **** ******* * * * **** ***** * * *******"
+        "    * ** ** * ** * * * * *"
+        "    ****************************************** ******* *******"
     )
 
     local delay=$(echo "$TOTAL_ANIMATION_DURATION / 20" | bc -l) # Calculate delay for the animation
@@ -295,18 +302,15 @@ recovery() {
 # TOTAL_UPDATE_DURATION=10 # Example duration in seconds
 
 # Function for the Application Store
-# Function for the Application Store
-# Function for the Application Store
-# Function for the Application Store
 app_store() {
     clear
     echo "==================================="
-    echo "|       Panes Application Store   |"
+    echo "|        Panes Application Store  |"
     echo "==================================="
     echo "Fetching available applications..."
     sleep 1
 
-    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local app_dir="$PARENT_DIR/BootFolder/Applications" # Retained as per original script structure
     mkdir -p "$app_dir" # Ensure the applications directory exists
     local repo_apps_list_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/RepoAvailableApps"
     local base_repo_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/"
@@ -383,7 +387,7 @@ app_store() {
         rm -f "$temp_remote_app_file" # Clean up temporary remote app file
 
         app_filenames_in_repo+=("$full_script_name") # Store the full filename with .sh
-        app_display_names+=("$app_base_name")       # Store the base name for display
+        app_display_names+=("$app_base_name")         # Store the base name for display
         app_statuses+=("$status")
         app_versions+=("$remote_version") # Store remote version for future use
     done < "$temp_repo_list_file"
@@ -452,14 +456,172 @@ app_store() {
     echo "Returning to main menu..."
     sleep 1
 }
-# Function to check and update individual applications in BootFolder/Applications
-# Function to check and update individual applications in BootFolder/Applications
-# Function to check and update individual applications in BootFolder/Applications
+
+---
+
+## Panes Installer
+
+This new function allows you to install local applications that you place into the `ToBeInstalled` directory.
+
+```bash
+# New Installer Function
+installer() {
+    clear
+    echo "==================================="
+    echo "|        Panes Installer          |"
+    echo "==================================="
+
+    local installer_dir="./ToBeInstalled" # Shares the same directory as the script
+    mkdir -p "$installer_dir" # Ensure the directory exists
+
+    if [ ! -d "$installer_dir" ]; then
+        echo "Error: Could not create or access '$installer_dir'."
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+
+    local installer_scripts_found=false
+    local apps_data=() # Array to hold display name, version, full filename, and CanDowngrade status
+
+    # Find bash scripts in the ToBeInstalled directory
+    while IFS= read -r script_path; do
+        installer_scripts_found=true
+        local script_filename=$(basename "$script_path") # e.g., MyNewApp.sh
+        local script_display_name="${script_filename%.sh}" # e.g., MyNewApp
+        local version="N/A"
+        local can_downgrade="false" # Default to false
+
+        # Try to find the VERSION variable using awk for robustness
+        local found_version=$(awk -F'=' '/^VERSION=/ {gsub(/"/, "", $2); print $2; exit}' "$script_path" | xargs)
+        if [[ -n "$found_version" ]]; then
+            version="$found_version"
+        fi
+
+        # Check for CanDowngrade variable
+        local found_can_downgrade=$(awk -F'=' '/^CanDowngrade=/ {gsub(/"/, "", $2); print tolower($2); exit}' "$script_path" | xargs)
+        if [[ "$found_can_downgrade" == "true" ]]; then
+            can_downgrade="true"
+        fi
+
+        apps_data+=("$script_display_name|$version|$script_filename|$can_downgrade") # Store name, version, filename, and CanDowngrade
+    done < <(find "$installer_dir" -maxdepth 1 -type f -name "*.sh" -print0 | xargs -0 sort) # Use -print0 and xargs -0 for robust handling of filenames with spaces
+
+    if [ "$installer_scripts_found" = false ]; then
+        echo "No installable applications found in '$installer_dir'."
+        echo "Please add or create bash scripts (.sh files) in this directory for installation."
+        echo "Example: 'touch ./ToBeInstalled/MyNewApp.sh' and then edit it with your app's code."
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+
+    echo "Found installable applications:"
+    echo "----------------------------------------------------------------"
+    printf "%-30s %-15s %-15s\n" "Application Name" "Version" "CanDowngrade"
+    echo "----------------------------------------------------------------"
+    local option_counter=1
+    local install_options=() # To store options for the select menu
+    for item in "${apps_data[@]}"; do
+        IFS='|' read -r name version filename can_downgrade_status <<< "$item"
+        printf "[%2d] %-30s %-15s %-15s\n" "$option_counter" "$name" "$version" "$can_downgrade_status"
+        install_options+=("$name|$filename|$version|$can_downgrade_status") # Store display name, filename, version, and CanDowngrade for select menu
+        ((option_counter++))
+    done
+    echo "----------------------------------------------------------------"
+    echo ""
+
+    PS3="Select an application to install (or 0 to go back): "
+    select install_choice in "${install_options[@]%%|*}" "Go Back"; do # Display only the name part
+        if [[ "$install_choice" == "Go Back" ]]; then
+            break # Exit the select loop
+        elif [[ -n "$install_choice" ]]; then
+            local selected_install_index=$((REPLY - 1))
+            if (( selected_install_index < 0 || selected_install_index >= ${#install_options[@]} )); then
+                echo "Invalid selection number. Please choose a number from the list or 0."
+                continue
+            fi
+            
+            # Extract filename, version, and CanDowngrade status from the stored option
+            IFS='|' read -r selected_display_name selected_filename selected_version selected_can_downgrade <<< "${install_options[selected_install_index]}"
+            local source_path="$installer_dir/$selected_filename"
+            local destination_dir="$PARENT_DIR/BootFolder/Applications" # Install to the existing Applications folder
+            local destination_path="$destination_dir/$selected_filename"
+
+            echo "You selected to install: $selected_display_name (Version: $selected_version)"
+
+            # Check if the application is already installed
+            if [ -f "$destination_path" ]; then
+                local current_installed_version=$(awk -F'=' '/^VERSION=/ {gsub(/"/, "", $2); print $2; exit}' "$destination_path" | xargs)
+                if [ -z "$current_installed_version" ]; then
+                    current_installed_version="0" # Default if existing app doesn't have a version
+                fi
+                echo "Currently installed version: $current_installed_version"
+
+                # Compare versions
+                if (( $(echo "$selected_version < $current_installed_version" | bc -l) )); then
+                    echo "The installer is for an older version ($selected_version) than the currently installed version ($current_installed_version)."
+                    if [[ "$selected_can_downgrade" == "true" ]]; then
+                        read -r -p "This installer allows downgrades. Do you want to proceed anyway? (y/n): " confirm_downgrade < /dev/tty
+                        if [[ ! "$confirm_downgrade" =~ ^[Yy]$ ]]; then
+                            echo "Downgrade cancelled by user."
+                            echo "Press [Enter] to continue..."
+                            read -r < /dev/tty
+                            break # Go back to installer menu
+                        fi
+                    else
+                        echo "This installer does NOT allow downgrades. Installation denied."
+                        echo "Press [Enter] to continue..."
+                        read -r < /dev/tty
+                        break # Go back to installer menu
+                    fi
+                elif (( $(echo "$selected_version == $current_installed_version" | bc -l) )); then
+                    echo "This version ($selected_version) is already installed. Reinstallation will proceed."
+                    read -r -p "Do you want to proceed with reinstallation? (y/n): " confirm_reinstall < /dev/tty
+                    if [[ ! "$confirm_reinstall" =~ ^[Yy]$ ]]; then
+                        echo "Reinstallation cancelled by user."
+                        echo "Press [Enter] to continue..."
+                        read -r < /dev/tty
+                        break # Go back to installer menu
+                    fi
+                fi
+                # If selected_version > current_installed_version, it's an upgrade, proceed normally.
+            fi
+
+            echo "Installing $selected_display_name..."
+
+            mkdir -p "$destination_dir" # Ensure destination directory exists
+
+            if cp -f "$source_path" "$destination_path"; then
+                chmod +x "$destination_path"
+                echo "Successfully installed $selected_display_name to '$destination_path'!"
+                echo "You may now launch this application from the desktop."
+                # Optional: Uncomment the following block if you want to offer to delete the original from ToBeInstalled
+                # read -r -p "Delete original script from ToBeInstalled directory? (y/n): " delete_confirm < /dev/tty
+                # if [[ "$delete_confirm" =~ ^[Yy]$ ]]; then
+                #       rm -f "$source_path"
+                #       echo "$selected_display_name removed from ToBeInstalled."
+                # fi
+            else
+                echo "Error: Failed to install $selected_display_name. Check permissions or disk space."
+            fi
+            echo "Press [Enter] to continue..."
+            read -r < /dev/tty # Ensure this read also uses /dev/tty
+            break # Exit select loop after action
+        else
+            echo "Invalid option. Please enter a number from the list."
+        fi
+    done < /dev/tty # Ensure select reads from terminal
+
+    echo "Returning to main menu..."
+    sleep 1
+}
+
 # Function to check and update individual applications in BootFolder/Applications
 check_application_updates() {
     clear
     echo "==================================="
-    echo "|   Checking Application Updates    |"
+    echo "|    Checking Application Updates   |"
     echo "==================================="
     local app_dir="$PARENT_DIR/BootFolder/Applications"
     local updated_any_app=false
@@ -482,7 +644,7 @@ check_application_updates() {
         local remote_app_version=""
         local remote_app_title="N/A" # Default if not found
         local remote_app_desc="No description provided." # Default if not found
-        local remote_app_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/$app_filename"
+        local remote_app_url="[https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/$app_filename](https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/$app_filename)"
 
         echo -e "\n--- Checking $app_filename ---"
 
@@ -524,7 +686,7 @@ check_application_updates() {
 
         if (( $(echo "$remote_app_version > $local_app_version" | bc -l) )); then
             echo -e "\n  ==================================="
-            echo "  |   Update Available for $app_filename   |"
+            echo "  |    Update Available for $app_filename    |"
             echo "  ==================================="
             echo "  Title: $remote_app_title"
             echo "  Description: $remote_app_desc"
@@ -568,7 +730,7 @@ check_application_updates() {
             echo "  $app_filename is already on the latest version ($local_app_version)."
         fi
     done 3<&0 # This redirects the original stdin (FD 0) to FD 3 for the `find` loop
-              # and makes FD 0 available for `read` commands within the loop.
+             # and makes FD 0 available for `read` commands within the loop.
 
     echo -e "\n--- Application Update Check Complete ---"
     if [ "$updated_any_app" = true ]; then
@@ -576,23 +738,23 @@ check_application_updates() {
     else
         echo "No application updates found or applied."
     fi
+
     echo "Press [Enter] to return to the main menu."
     read -r
 }
 # New function for the Developer Update (keep this as is, defined before check_for_updates)
-# New function for the Developer Update
 dev_update() {
     clear
     echo "==================================="
-    echo "|     Panes Developer Update      |"
+    echo "|      Panes Developer Update     |"
     echo "==================================="
     echo "This update channel requires a developer key."
     read -r -s -p "Enter Developer Key: " user_entered_dev_key # Changed variable name to avoid confusion with file content
     echo # Newline after silent input
 
-    local dev_key_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/DeveloperKey"
-    local env_updater_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/EnvironmentUpdater.sh"
-    local panes_glimpse_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh"
+    local dev_key_url="[https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/DeveloperKey](https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/DeveloperKey)"
+    local env_updater_url="[https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/EnvironmentUpdater.sh](https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/EnvironmentUpdater.sh)"
+    local panes_glimpse_url="[https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh](https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh)"
 
     local temp_dev_key_file="/tmp/panes_devkey_$$_$(date +%s).txt"
     local temp_env_updater_file="/tmp/panes_env_updater_$$_$(date +%s).sh"
@@ -642,263 +804,141 @@ dev_update() {
     rm -f "$temp_env_updater_file" 2>/dev/null
 
     if [ "$env_updater_exit_code" -ne 0 ]; then
-        echo "EnvironmentUpdater.sh completed with errors (Exit Code: $env_updater_exit_code). Update may be incomplete."
-        echo "Press [Enter] to continue or to return to the main menu."
-        read -r < /dev/tty
-        return
-    else
-        echo "EnvironmentUpdater.sh completed successfully."
-    fi
-
-    # Step 2: Download and run PanesGlimpse.sh (which will likely replace Panes.sh)
-    echo "Downloading PanesGlimpse.sh..."
-    if ! curl -s "$panes_glimpse_url" -o "$temp_panes_glimpse_file"; then
-        echo "Error: Failed to download PanesGlimpse.sh. Aborting."
-        rm -f "$temp_panes_glimpse_file" 2>/dev/null
+        echo "Environment Updater failed with exit code $env_updater_exit_code. Aborting Developer Update."
         echo "Press [Enter] to return to the main menu."
         read -r < /dev/tty
         return
     fi
-    chmod +x "$temp_panes_glimpse_file"
 
-    echo "Running PanesGlimpse.sh to finalize update..."
-    exec bash "$temp_panes_glimpse_file" "$PARENT_DIR"
-    echo "Error: Failed to execute PanesGlimpse.sh unexpectedly."
+    # Step 2: Download and replace PanesGlimpse.sh
+    echo "Downloading PanesGlimpse.sh (main application)..."
+    if ! curl -s "$panes_glimpse_url" -o "$PARENT_DIR/PanesGlimpse.sh"; then
+        echo "Error: Failed to download PanesGlimpse.sh. Your system might be unstable."
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+    chmod +x "$PARENT_DIR/PanesGlimpse.sh"
+    echo "PanesGlimpse.sh updated successfully!"
+
+    echo "Developer Update Complete!"
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
 }
-# Modified check_for_updates function
+
+# Function to check for updates (main system update)
 check_for_updates() {
     clear
     echo "==================================="
-    echo "|        Checking for Updates     |"
+    echo "|      Checking for Updates       |"
     echo "==================================="
-    echo "[1] Update Panes.sh (Standard)"
-    echo "[2] Check and Update Applications"
-    echo "[3] Developer Update (Requires Key)" # <-- Developer Update option here
-    echo "[0] Back to Main Menu"
-    echo "==================================="
-    read -r -p "Enter your choice: " update_option < /dev/tty
+    local update_url="[https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh](https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesGlimpse.sh)"
+    local temp_update_script="/tmp/PanesGlimpse_latest.sh"
 
-    case $update_option in
-        1)
-            echo "Checking for Panes.sh standard update..."
-            local LOCAL_VERSION="$VERSION"
-            local REMOTE_VERSION=""
-            local REMOTE_TITLE=""
-            local REMOTE_DESC=""
-            local VERIFICATION_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            local TEMP_UPDATE_FILE="/tmp/Panes_standard_update.sh"
+    echo "Fetching latest update information..."
+    # Download the latest version of PanesGlimpse.sh to a temporary file
+    if ! curl -s "$update_url" -o "$temp_update_script"; then
+        echo "Error: Failed to download update information. Please check your internet connection."
+        rm -f "$temp_update_script" 2>/dev/null
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
 
-            if ! curl -s "$VERIFICATION_URL" -o "$TEMP_UPDATE_FILE"; then
-                echo "Error: Could not download remote Panes.sh for version check."
-                echo "Press [Enter] to return."
+    # Extract version from the downloaded temporary script
+    local latest_version=$(grep '^VERSION=' "$temp_update_script" | cut -d'=' -f2 | tr -d '"')
+    local latest_update_title=$(grep '^UPDATE_TITLE=' "$temp_update_script" | cut -d'=' -f2 | tr -d '"')
+    local latest_update_desc=$(grep '^UPDATE_DESC=' "$temp_update_script" | cut -d'=' -f2 | tr -d '"')
+
+    # Ensure current script has a version defined
+    if [ -z "$VERSION" ]; then
+        echo "Error: Current Panes version not defined. Cannot check for updates."
+        rm -f "$temp_update_script" 2>/dev/null
+        echo "Press [Enter] to return to the main menu."
+        read -r < /dev/tty
+        return
+    fi
+
+    echo "Current Panes OS Version: $VERSION"
+    echo "Latest Available Version: $latest_version"
+
+    if (( $(echo "$latest_version > $VERSION" | bc -l) )); then
+        echo -e "\n==================================="
+        echo "|       New Update Available!     |"
+        echo "==================================="
+        echo "Title: $latest_update_title"
+        echo "Description: $latest_update_desc"
+        echo "-----------------------------------"
+        
+        local confirm_update
+        read -r -p "A new version ($latest_version) is available. Proceed with update? (y/n): " confirm_update < /dev/tty
+        
+        if [[ "$confirm_update" == "y" || "$confirm_update" == "Y" ]]; then
+            echo "Proceeding with update..."
+            local current_script_path="$0" # Path to the currently running script
+            local temp_target_path="$current_script_path.temp_update"
+
+            # Simulate download/installation progress
+            local total_steps=10
+            local step_duration=$(echo "$TOTAL_UPDATE_DURATION / $total_steps" | bc -l)
+            for ((i=0; i<=total_steps; i++)); do
+                sleep "$step_duration"
+                printf "\rProgress: ["
+                for ((j=0; j<i; j++)); do
+                    printf "#"
+                done
+                for ((j=i; j<total_steps; j++)); do
+                    printf " "
+                done
+                printf "] %d%%" "$((i * 100 / total_steps))"
+            done
+            printf "\r"
+
+            # Atomically replace the old script with the new one
+            if mv -f "$temp_update_script" "$current_script_path"; then
+                chmod +x "$current_script_path"
+                echo "Panes OS updated successfully to version $latest_version!"
+                echo "Please restart Panes OS for changes to take full effect."
+                echo "Press [Enter] to restart Panes OS."
                 read -r < /dev/tty
-                return
-            fi
-
-            REMOTE_VERSION=$(grep '^VERSION=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
-            REMOTE_TITLE=$(grep '^UPDATE_TITLE=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
-            REMOTE_DESC=$(grep '^UPDATE_DESC=' "$TEMP_UPDATE_FILE" | cut -d'=' -f2 | tr -d '"')
-
-            rm -f "$TEMP_UPDATE_FILE"
-
-            if [ -z "$REMOTE_VERSION" ]; then
-                echo "Error: Could not determine remote Panes.sh version."
-                echo "Press [Enter] to return."
-                read -r < /dev/tty
-                return
-            fi
-
-            echo "Local Panes.sh Version: $LOCAL_VERSION"
-            echo "Remote Panes.sh Version: $REMOTE_VERSION"
-            echo "Update Title: $REMOTE_TITLE"
-            echo "Update Description: $REMOTE_DESC"
-
-            if (( $(echo "$REMOTE_VERSION" \> "$LOCAL_VERSION" | bc -l) )); then # Updated comparison for bc
-                echo "A new Panes.sh version ($REMOTE_VERSION) is available."
-                read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
-                if [[ "$confirm_update" == "y" || "$confirm_update" == "Y" ]]; then
-                    echo "Updating Panes.sh..."
-                    local total_steps=10
-                    local step_duration=$(echo "$TOTAL_UPDATE_DURATION * 0.1 / $total_steps" | bc -l)
-
-                    for ((i=0; i<=total_steps; i++)); do
-                        sleep "$step_duration"
-                        printf "\rProgress: ["
-                        for ((j=0; j<i; j++)); do printf "#"; done
-                        for ((j=i; j<total_steps; j++)); do printf " "; done
-                        printf "] %d%%" "$((i * 100 / total_steps))"
-                    done
-                    printf "\r"
-
-                    if curl -s "$DOWNLOAD_URL" -o "$PARENT_DIR/Panes.sh"; then
-                        echo "Panes.sh updated successfully! Please restart Panes."
-                        exit 0
-                    else
-                        echo "Error: Failed to download Panes.sh update."
-                    fi
-                else
-                    echo "Panes.sh update cancelled by user."
-                fi
+                # Execute the updated script
+                exec bash "$current_script_path"
             else
-                echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
+                echo "Error: Failed to apply the update. Manual intervention may be required."
             fi
-            echo "Press [Enter] to return to the desktop."
-            read -r < /dev/tty
-            ;;
-        2)
-            check_application_updates
-            ;;
-        3) # Call dev_update from here
-            dev_update
-            ;;
-        0)
-            echo "Returning to main menu."
-            sleep 1
-            ;;
-        *)
-            echo "Invalid option. Please choose 1, 2, 3, or 0."
-            sleep 1
-            ;;
-    esac
-}
-
-ReInstall() {
-    clear
-    echo "============================="
-    echo "|       Reinstall PANES     |"
-    echo "============================="
-    echo "Panes Restore: Grappling Latest PANES"
-    sleep 1
-    echo "Panes Restore: Prepping for restoration. Downloading..."
-
-    # Displaying a progress bar
-    local total_steps=20 # Total number of steps to display progress
-    local step_duration=$(( TOTAL_UPDATE_DURATION * 10 / total_steps )) # Duration of each step
-    for ((i=0; i<=total_steps; i++)); do
-        sleep $step_duration
-        printf "\rProgress: ["
-        for ((j=0; j<i; j++)); do
-            printf "#"
-        done
-        for ((j=i; j<total_steps; j++)); do
-            printf " "
-        done
-        printf "] %d%%" $((i * 100 / total_steps))
-    done
-
-    echo -e "\n\Restore downloaded. Applying changes..."
-    
-    # Change directory back up one level and copy the script (adjust the path to your BootFolder)
-    cd $PARENT_DIR
-    sudo rm -rf BootFolder/Panes.sh
-    cp -f Panes.sh BootFolder/Panes.sh
-    
-    echo "Restore applied successfully!"
-    echo "Please restart, if the restore failed, the Installation Utility will automatically re-install Panes."
-    read -r
-}
-
-# Initial animations when the script is first run
-shooting_star & # Run shooting star animation in background
-spinner_pid=0
-
-# Start spinner in the background
-#spinner & spinner_pid=$!
-#caused too many issues, no spinner
-# Wait and check if the animation completes in 10 seconds
-(animate_ascii_art &)
-ANIMATION_PID=$!
-
-# Wait for the animation to finish or timeout after 10 seconds
-( sleep 10; kill -TERM $ANIMATION_PID 2>/dev/null ) &
-
-# Wait for the animation process
-wait $ANIMATION_PID
-if [ $? -ne 0 ]; then
-    kill $spinner_pid 2>/dev/null  # Stop the spinner
-    recovery # Call recovery if the animation did not finish successfully
-fi
-#deprecated spinner
-#wait $spinner_pid
-# Wait for spinner to finish
-
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-while true; do
-    draw_desktop # This populates INSTALLED_APPS_GLOBAL and prints desktop options
-
-    num_fixed_options=9 # Options 1-9 (1-9 are hardcoded functions)
-    installed_apps_start_num=10 # Installed apps start from this number
-    num_installed_apps=${#INSTALLED_APPS_GLOBAL[@]}
-
-    read -r -p "Enter your choice: " option # Allow multi-digit input, with prompt
-
-    # First, validate input is a number
-    if ! [[ "$option" =~ ^[0-9]+$ ]]; then
-        echo "Invalid input. Please enter a number."
-        sleep 1
-        continue # Go back to drawing the desktop
-    fi
-
-    # Now, handle the numerical options using if/elif
-    if (( option >= 1 && option <= num_fixed_options )); then
-        # Handle fixed options (1-9)
-        case $option in
-            1)
-                text_editor
-                ;;
-            2)
-                calculator
-                ;;
-            3)
-                file_viewer
-                ;;
-            4)
-                guessing_game
-                ;;
-            5)
-                app_store
-                ;;
-            6)
-                shooting_star
-                draw_ascii_art
-                ;;
-            7)
-                check_for_updates
-                ;;
-            8)
-                ReInstall
-                ;;
-            9)
-                clear
-                echo "Exiting Panes..."
-                sleep 1
-                exit 0
-                ;;
-        esac
-    elif (( option >= installed_apps_start_num && option < installed_apps_start_num + num_installed_apps )); then
-        # Handle dynamically added installed applications (numbers 10 and above)
-        selected_index_for_array=$((option - installed_apps_start_num))
-        selected_app_filename="${INSTALLED_APPS_GLOBAL[selected_index_for_array]}"
-
-        if [ -n "$selected_app_filename" ]; then
-            app_menu "$selected_app_filename"
         else
-            echo "Error: Could not determine selected application."
-            sleep 1
+            echo "Update cancelled by user."
         fi
-    # NEW: Explicit elif for invalid numeric options
-    elif (( option < 1 || (option > num_fixed_options && option < installed_apps_start_num) || option >= installed_apps_start_num + num_installed_apps )); then
-        echo "Invalid option. Please select a valid number from the list."
-        sleep 1
+    elif (( $(echo "$latest_version < $VERSION" | bc -l) )); then
+        echo "You are currently running a newer version ($VERSION) than the latest available official update ($latest_version)."
+        echo "This might be due to being on a developer build or a pre-release version."
+        echo "No action taken."
+    else
+        echo "Panes OS is already up to date ($VERSION)."
     fi
-done
+
+    rm -f "$temp_update_script" 2>/dev/null
+    echo "Press [Enter] to return to the main menu."
+    read -r < /dev/tty
+}
+
+main_menu() {
+    local choice
+    while true; do
+        draw_desktop
+        read -r -p "Enter your choice: " choice < /dev/tty
+
+        # Check if the choice is for an installed application
+        if (( choice >= 10 && choice < 10 + ${#INSTALLED_APPS_GLOBAL[@]} )); then
+            local app_index=$((choice - 10))
+            app_menu "${INSTALLED_APPS_GLOBAL[app_index]}"
+            continue # Return to the main menu loop
+        fi
+
+        case "$choice" in
+            1)
+                echo "Opening Text Editor..."
+                sleep 1
+                echo "Text Editor functionality goes here."
+                echo "Press [Enter] to return to the desktop."
+                read
