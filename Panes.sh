@@ -6,13 +6,13 @@ cd "$(dirname "$0")"
 #1054 appenhanced
 #Coming Soon in Beta: Installer
 UPDATE_TITLE="Panes OS 1.053 "AppEnhanced" "
-UPDATE_DESC="Panes OS 1.052 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
+UPDATE_DESC="Panes OS 1.053 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.052
+VERSION=1.053
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
