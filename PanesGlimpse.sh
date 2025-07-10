@@ -5,14 +5,14 @@ cd "$(dirname "$0")"
 #1053 ontrack
 #1054 appenhanced
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes OS 1.054 "Portal" "
-UPDATE_DESC="Panes OS 1.054 Codenamed Portal is a new addition to the DTC that introduces a protocol allowing applications or programs to be installed onto the system via the Portal (soon to be formerly Installer)"
+UPDATE_TITLE="Panes OS 1.053 "AppEnhanced" "
+UPDATE_DESC="Panes OS 1.053 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
-INSTALLED_DIR="$PARENT_DIR/Installed"
+INSTALLED_DIR="$(dirname "$0")/Applications"
 
-VERSION=1.054
+VERSION=1.053
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
@@ -139,6 +139,7 @@ uninstall_application() {
     if [[ "$confirm_uninstall" == "y" ]]; then
         if rm -f "$app_full_path"; then
             echo "$app_display_name uninstalled successfully!"
+            echo "If you used the Installer Portal, You must grab another copy of the installer for this app if you wish to install it in the future." # Added message
         else
             echo "Error: Failed to uninstall $app_display_name. Check permissions for $app_full_path."
         fi
@@ -148,7 +149,6 @@ uninstall_application() {
     echo "Press [Enter] to return to the desktop."
     read -r < /dev/tty
 }
-
 # Menu for an installed application (this calls launch_application and uninstall_application)
 app_menu() {
     local selected_app_filename="$1"
@@ -833,6 +833,8 @@ ReInstall() {
     read -r
 }
 
+# New function for the local Application # New function for the local Application Installer
+# New function for the local Application Installer
 # New function for the local Application Installer
 app_installer() {
     clear
@@ -841,7 +843,9 @@ app_installer() {
     echo "==================================="
 
     local installer_portal_dir="$(dirname "$0")/InstallersPortal" # Relative to script's location
-    
+    local receipts_dir="$(dirname "$0")/Receipts" # New: Define Receipts directory
+    local ticket_data_file="$receipts_dir/TicketData" # New: Define TicketData file
+
     # 1. Check for/Create InstallersPortal directory
     if [ ! -d "$installer_portal_dir" ]; then
         echo "Creating installer portal directory: $installer_portal_dir"
@@ -963,10 +967,101 @@ app_installer() {
             if [ "$perform_install" = true ]; then
                 echo "Installing/Updating $app_name (v$app_version)..."
                 mkdir -p "$INSTALLED_DIR" # Ensure the destination exists
+                
+                # --- Installation Progress Bar ---
+                local total_installation_time=6.0 # seconds (set to 6.0 to ensure at least 5 seconds on average)
+                local num_progress_steps=20       # controls granularity of updates
+                local min_sleep_per_step=$(echo "scale=2; $total_installation_time / $num_progress_steps / 2" | bc)
+                local max_sleep_per_step=$(echo "scale=2; $total_installation_time / $num_progress_steps * 1.5" | bc)
+                local current_progress=0
+                
+                clear # Clear screen for the progress bar
+                echo "==================================="
+                echo "|   Installing $app_name          |"
+                echo "==================================="
+                echo "Progress:"
+                echo "[----------------------------------------]" # 40 chars for the bar
+                echo " _ _ _" # Window graphic placeholder
+                echo "|_|_|_|"
+                echo "|_|_|_|"
+                echo " _ _ _"
+                
+                # Save cursor position for dynamic updates
+                tput sc
+
+                for ((i=0; i<num_progress_steps; i++)); do
+                    # Calculate random sleep duration for this step
+                    local sleep_duration=$(echo "scale=2; $min_sleep_per_step + ($RANDOM % 100) * ($max_sleep_per_step - $min_sleep_per_step) / 100" | bc)
+                    sleep "$sleep_duration"
+
+                    current_progress=$(( (i + 1) * 100 / num_progress_steps ))
+                    
+                    # Restore cursor, clear line, and print new progress
+                    tput rc
+                    tput cuu 5 # Move up 5 lines to update the progress bar area
+                    printf "\rProgress: ["
+                    local filled_chars=$(( (current_progress * 40) / 100 ))
+                    for ((j=0; j<filled_chars; j++)); do printf "#"; done
+                    for ((j=filled_chars; j<40; j++)); do printf " "; done
+                    printf "] %d%%" "$current_progress"
+                    
+                    # Update window graphic (simple animation)
+                    tput cud 1 # Move down to the window graphic
+                    tput el # Clear line
+                    if (( i % 4 == 0 )); then
+                        echo " . _ . _"
+                        echo "|_|_|_|_|"
+                        echo "|_|_|_|_|"
+                        echo " . _ . _"
+                    elif (( i % 4 == 1 )); then
+                        echo " _ . _ ."
+                        echo "|_|_|_|_|"
+                        echo "|_|_|_|_|"
+                        echo " _ . _ ."
+                    elif (( i % 4 == 2 )); then
+                        echo " . _ . _"
+                        echo "|_|_|_|_|"
+                        echo "|_|_|_|_|"
+                        echo " . _ . _"
+                    else
+                        echo " _ . _ ."
+                        echo "|_|_|_|_|"
+                        echo "|_|_|_|_|"
+                        echo " _ . _ ."
+                    fi
+                    tput sc # Save cursor position again
+                done
+                
+                # Ensure the bar is 100% and graphic is reset
+                tput rc
+                tput cuu 5
+                printf "\rProgress: [########################################] 100%%\n"
+                tput cud 1
+                tput el
+                echo " _ _ _"
+                echo "|_|_|_|"
+                echo "|_|_|_|"
+                echo " _ _ _"
+                echo "" # Newline after the graphic
+
                 if cp "$installer_script_path" "$target_app_path" && chmod +x "$target_app_path"; then
                     echo "$app_name installed/updated successfully!"
                     # Optional: Execute the installer script itself if it has post-install actions
                     # ( bash "$target_app_path" ) # Uncomment if installer scripts need to run
+
+                    # --- NEW: Log installation details to TicketData ---
+                    mkdir -p "$receipts_dir" # Ensure Receipts directory exists
+                    if [ -f "$ticket_data_file" ]; then
+                        echo -e "\n\n" >> "$ticket_data_file" # Add two newlines if file exists
+                    fi
+                    echo "Installer Filename: $installer_filename" >> "$ticket_data_file"
+                    echo "App Name: $app_name" >> "$ticket_data_file"
+                    echo "Version: $app_version" >> "$ticket_data_file"
+                    echo "Can Downgrade: $can_downgrade" >> "$ticket_data_file"
+                    echo "Installation Date: $(date)" >> "$ticket_data_file"
+                    echo "Installation Path: $target_app_path" >> "$ticket_data_file"
+                    # --- END NEW LOGGING ---
+
                 else
                     echo "Error: Failed to install/update $app_name."
                 fi
@@ -982,157 +1077,9 @@ app_installer() {
     echo "Returning to main menu..."
     sleep 1
 }
-
 #Panes Installer Portal
 # New function for the local Application Installer
-app_installer() {
-    clear
-    echo "==================================="
-    echo "|       Panes App Installer       |"
-    echo "==================================="
 
-    local installer_portal_dir="$(dirname "$0")/InstallersPortal" # Relative to script's location
-    
-    # 1. Check for/Create InstallersPortal directory
-    if [ ! -d "$installer_portal_dir" ]; then
-        echo "Creating installer portal directory: $installer_portal_dir"
-        mkdir -p "$installer_portal_dir"
-        echo "Please place your application installer (.sh) files into this folder."
-        echo "Press [Enter] to return to the desktop."
-        read -r < /dev/tty
-        return
-    fi
-
-    echo "Searching for applications in '$installer_portal_dir'..."
-    sleep 1
-
-    local found_installers=()
-    local installer_details=() # Stores: "filename|name|version|can_downgrade"
-
-    # Search for bash scripts and validate their content
-    while IFS= read -r script_path; do
-        local filename=$(basename "$script_path")
-        local app_name=""
-        local app_version=""
-        local can_downgrade="False" # Default to False
-
-        # Read variables from the script
-        local_app_name=$(grep '^Name=' "$script_path" | cut -d'=' -f2 | tr -d '"' | xargs)
-        local_app_version=$(grep '^Version=' "$script_path" | cut -d'=' -f2 | tr -d '"' | xargs)
-        local_can_downgrade=$(grep '^CanDowngrade=' "$script_path" | cut -d'=' -f2 | tr -d '"' | xargs)
-
-        if [ -n "$local_app_name" ] && [ -n "$local_app_version" ]; then
-            app_name="$local_app_name"
-            app_version="$local_app_version"
-            if [[ "$local_can_downgrade" =~ ^[Tt][Rr][Uu][Ee]$ ]]; then
-                can_downgrade="True"
-            fi
-            
-            # Check if an app with the same name or filename is already installed
-            local installed_status="(Not Installed)"
-            local installed_version="0.0"
-            local current_local_app_path="$INSTALLED_DIR/$filename" # Check by filename
-
-            if [ -f "$current_local_app_path" ]; then
-                installed_version=$(grep '^Version=' "$current_local_app_path" | cut -d'=' -f2 | tr -d '"' | xargs)
-                if [ -z "$installed_version" ]; then
-                    installed_version="0.0" # Assume 0 if existing installed app lacks version
-                fi
-
-                if (( $(echo "$app_version > $installed_version" | bc -l) )); then
-                    installed_status="(Installed - Update Available: $installed_version -> $app_version)"
-                elif (( $(echo "$app_version == $installed_version" | bc -l) )); then
-                    installed_status="(Installed - Current: $installed_version)"
-                else
-                    if [[ "$can_downgrade" == "True" ]]; then
-                        installed_status="(Installed - Downgrade Available: $installed_version -> $app_version)"
-                    else
-                        installed_status="(Installed - Newer Version Present: $installed_version)"
-                    fi
-                fi
-            fi
-
-            found_installers+=("$filename")
-            installer_details+=("$filename|$app_name|$app_version|$can_downgrade|$installed_status")
-        else
-            echo "Skipping '$filename': Missing Name or Version variables."
-        fi
-    done < <(find "$installer_portal_dir" -maxdepth 1 -type f -name "*.sh" | sort)
-
-    if [ ${#found_installers[@]} -eq 0 ]; then
-        echo "No valid application installers found in '$installer_portal_dir'."
-        echo "Please ensure the .sh files contain 'Name', 'Version', and optionally 'CanDowngrade' variables."
-        echo "Press [Enter] to return to the desktop."
-        read -r < /dev/tty
-        return
-    fi
-
-    # Display selectable list
-    PS3="Select an application to install (or 0 to go back): "
-    local menu_options=()
-    for detail_string in "${installer_details[@]}"; do
-        IFS='|' read -r -a details_array <<< "$detail_string"
-        menu_options+=("${details_array[1]} (v${details_array[2]}) ${details_array[4]}")
-    done
-
-    select choice in "${menu_options[@]}" "Go Back"; do
-        if [[ "$choice" == "Go Back" ]]; then
-            break
-        elif [[ -n "$choice" ]]; then
-            local selected_index=$((REPLY - 1))
-            if (( selected_index < 0 || selected_index >= ${#found_installers[@]} )); then
-                echo "Invalid selection number."
-                continue
-            fi
-
-            IFS='|' read -r -a selected_details <<< "${installer_details[selected_index]}"
-            local installer_filename="${selected_details[0]}"
-            local app_name="${selected_details[1]}"
-            local app_version="${selected_details[2]}"
-            local can_downgrade="${selected_details[3]}"
-            local current_status="${selected_details[4]}"
-            local installer_script_path="$installer_portal_dir/$installer_filename"
-            local target_app_path="$INSTALLED_DIR/$installer_filename"
-
-            # Check installation conditions
-            local perform_install=false
-            if [[ "$current_status" == *"(Not Installed)"* ]]; then
-                perform_install=true
-            elif [[ "$current_status" == *"(Installed - Update Available"* ]]; then
-                perform_install=true
-            elif [[ "$current_status" == *"(Installed - Downgrade Available"* && "$can_downgrade" == "True" ]]; then
-                read -r -p "This is a downgrade. Are you sure you want to proceed? (y/n): " confirm_downgrade < /dev/tty
-                if [[ "$confirm_downgrade" =~ ^[Yy]$ ]]; then
-                    perform_install=true
-                else
-                    echo "Downgrade cancelled."
-                fi
-            else
-                echo "$app_name is already installed and no update/allowed downgrade is available."
-            fi
-
-            if [ "$perform_install" = true ]; then
-                echo "Installing/Updating $app_name (v$app_version)..."
-                mkdir -p "$INSTALLED_DIR" # Ensure the destination exists
-                if cp "$installer_script_path" "$target_app_path" && chmod +x "$target_app_path"; then
-                    echo "$app_name installed/updated successfully!"
-                    # Optional: Execute the installer script itself if it has post-install actions
-                    # ( bash "$target_app_path" ) # Uncomment if installer scripts need to run
-                else
-                    echo "Error: Failed to install/update $app_name."
-                fi
-            fi
-            echo "Press [Enter] to continue..."
-            read -r < /dev/tty
-            break # Exit select loop after action
-        else
-            echo "Invalid option. Please enter a number from the list."
-        fi
-    done < /dev/tty # Ensure select reads from terminal
-
-    echo "Returning to main menu..."
-    sleep 1
-}
 
 # Initial animations when the script is first run
 shooting_star & # Run shooting star animation in background
@@ -1233,7 +1180,7 @@ while true; do
             sleep 1
         fi
     # NEW: Explicit elif for invalid numeric options
-    elif (( option < 1 || (option > num_fixed_options && option < installed_apps_start_num) || option >= installed_apps_start_num + num_installed_apps )); then
+    elif (( option < 0 || (option > num_fixed_options && option < installed_apps_start_num) || option >= installed_apps_start_num + num_installed_apps )); then
         echo "Invalid option. Please select a valid number from the list."
         sleep 1
     fi
