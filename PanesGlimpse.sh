@@ -5,14 +5,14 @@ cd "$(dirname "$0")"
 #1053 ontrack
 #1054 appenhanced
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes OS 1.053 "AppEnhanced" "
-UPDATE_DESC="Panes OS 1.053 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
+UPDATE_TITLE="Panes OS 1.054 "Portal DTC Glimpse" "
+UPDATE_DESC="Panes OS 1.054 Codenamed Portal DTC Glimpse allows for the creaiton & installation of custom-made programs and apps. Please perform a backup before attempting this beta! If you do not know where to get the key, do not use this beta."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$(dirname "$0")/Applications"
 
-VERSION=1.053
+VERSION=1.054
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
