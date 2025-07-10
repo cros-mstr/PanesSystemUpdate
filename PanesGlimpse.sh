@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 #1054 appenhanced
 #Coming Soon in Beta: Installer
 UPDATE_TITLE="Panes OS 1.054 "Portal DTC Glimpse" "
-UPDATE_DESC="Panes OS 1.054 Codenamed Portal DTC Glimpse allows for the creaiton & installation of custom-made programs and apps. Please perform a backup before attempting this beta! If you do not know where to get the key, do not use this beta."
+UPDATE_DESC="Panes OS 1.054 Codenamed Portal DTC Glimpse allows for early access to the creaiton & installation of custom-made programs and apps. Please perform a backup before attempting this beta! If you do not know where to get the key, do not use this beta."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
