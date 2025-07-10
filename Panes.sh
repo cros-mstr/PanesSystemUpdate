@@ -1,7 +1,11 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-UPDATE_TITLE="Panes OS 1.052 "OnTrack" "
-UPDATE_DESC="Panes OS 1.052 Codenamed OnTrack is an update which fixes the previous Update (ToDate) function and patches a bug where the update wouldn't apply after downloading."
+#history
+#1052 beamed
+#1053 ontrack
+#1054 appenhanced
+UPDATE_TITLE="Panes OS 1.053 "AppEnhanced" "
+UPDATE_DESC="Panes OS 1.052 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
@@ -303,7 +307,7 @@ app_store() {
     echo "Fetching available applications..."
     sleep 1
 
-    local app_dir="$PARENT_DIR/BootFolder/Applications"
+    local app_dir="./Applications"
     mkdir -p "$app_dir" # Ensure the applications directory exists
     local repo_apps_list_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/RepoAvailableApps"
     local base_repo_url="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/"
