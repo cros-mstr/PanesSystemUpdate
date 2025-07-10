@@ -10,7 +10,7 @@ UPDATE_DESC="Panes OS 1.054 Codenamed Portal DTC Glimpse allows for early access
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
-INSTALLED_DIR="$(dirname "$0")/Applications"
+INSTALLED_DIR="./Applications"
 
 VERSION=1.054
 # Duration for initial animation in seconds
