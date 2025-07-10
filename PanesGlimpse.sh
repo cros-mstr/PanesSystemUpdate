@@ -448,7 +448,6 @@ app_store() {
     sleep 1
 }
 
----
 
 ## Panes Installer
 
