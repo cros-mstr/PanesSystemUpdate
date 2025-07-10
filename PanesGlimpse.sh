@@ -2,13 +2,15 @@
 #Bugs, bugs, BUGS!!!
 #!/bin/bash
 cd "$(dirname "$0")"
-UPDATE_TITLE="Panes OS 1.052 "BugSquasher Glimpse" "
-UPDATE_DESC="Panes OS 1.052 is integrated into the public DTC repository. Expect bugs, glitches, and features not present in mainstream PanesOs."
+#history 1052 BugSquasher Glimpse
+#1054 Open Glimpse
+UPDATE_TITLE="Panes OS 1.054 "Open Glimpse" "
+UPDATE_DESC="Panes OS 1.054 is integrated into the public DTC repository. Expect bugs, glitches, and features not present in mainstream PanesOs. Please back up your data before proceeding."
 # Check if the script is running from a specific path
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.052
+VERSION=1.054
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
