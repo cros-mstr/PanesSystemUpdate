@@ -1,18 +1,25 @@
 #!/bin/bash
 cd "$(dirname "$0")"
+
+# Set terminal background color to #00EEFF
+#Changed to for readability and less strain
+printf '\033]11;#0F9096\007'
+
+# --- rest of your script follows ---
 #history
 #1052 beamed
 #1053 ontrack
 #1054 appenhanced
+#1055 Spectrum
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes OS 1.053 "AppEnhanced" "
-UPDATE_DESC="Panes OS 1.053 Codenamed AppEnhanced is an update to the Program Repository which updates where apps are stored. You may need to reinstall your apps after this."
+UPDATE_TITLE="Panes OS 1.055 "Spectrum" "
+UPDATE_DESC="Panes OS 1.055 Codenamed Spectrum is an update to the system that allows for further customization settings."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.053
+VERSION=1.054
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
