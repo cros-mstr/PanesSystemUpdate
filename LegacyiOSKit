@@ -1,2 +1,7 @@
+PANESType=StatefulApplicationThirdPartySource
+PANESSource=ThirdParty
+UPDATE_TITLE="LiK"
+UPDATE_DESC="Update to LiKFetcher2k"
+VERSION=0
 echo "Now downloading LukeGZDs Legacy iOS Kit..."
 cd;(git clone https://github.com/LukeZGD/Legacy-iOS-Kit.git)
