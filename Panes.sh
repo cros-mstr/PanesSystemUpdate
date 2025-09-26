@@ -13,13 +13,13 @@ printf '\033]11;#0F9096\007'
 #1055 Spectrum
 #Coming Soon in Beta: Installer
 UPDATE_TITLE="Panes OS 1.055 "Spectrum" "
-UPDATE_DESC="Panes OS 1.055 Codenamed Spectrum is an update to the system that allows for further customization settings."
+UPDATE_DESC="Panes OS 1.055 Codenamed Spectrum is an update to the system that allows for further customization settings. It also fixes and enhances the Restore process."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.054
+VERSION=1.055
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
