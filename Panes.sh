@@ -826,6 +826,7 @@ ReInstall() {
         done
         printf "] %d%%" $((i * 100 / total_steps))
     done
+    curl -L -o Panes.sh "https://github.com/cros-mstr/PanesSystemUpdate/raw/main/PanesBackup.sh"
     #Maybe put a version downgrade here to change the variable? Results in arithmetic operation error at line 728.
     echo -e "\n\Restore downloaded. Please restart and update Panes..."
     
