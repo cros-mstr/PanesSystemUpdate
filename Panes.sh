@@ -826,17 +826,11 @@ ReInstall() {
         done
         printf "] %d%%" $((i * 100 / total_steps))
     done
-
-    echo -e "\n\Restore downloaded. Applying changes..."
+VERSION=0
+    echo -e "\n\Restore downloaded. Please restart and update Panes..."
     
     # Change directory back up one level and copy the script (adjust the path to your BootFolder)
-    cd $PARENT_DIR
-    sudo rm -rf BootFolder/Panes.sh
-    cp -f Panes.sh BootFolder/Panes.sh
-    
-    echo "Restore applied successfully!"
-    echo "Please restart, if the restore failed, the Installation Utility will automatically re-install Panes."
-    read -r
+#Or upload a version of panes with a downgraded version and replace this one with that.
 }
 
 # Initial animations when the script is first run
