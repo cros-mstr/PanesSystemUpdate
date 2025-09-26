@@ -826,7 +826,7 @@ ReInstall() {
         done
         printf "] %d%%" $((i * 100 / total_steps))
     done
-$VERSION=0
+$LOCAL_VERSION=0
     echo -e "\n\Restore downloaded. Please restart and update Panes..."
     
     # Change directory back up one level and copy the script (adjust the path to your BootFolder)
