@@ -826,7 +826,7 @@ ReInstall() {
         done
         printf "] %d%%" $((i * 100 / total_steps))
     done
-
+curl -s https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesBackup.sh -o $PARENT_DIR/PanesBackup.sh
     echo -e "\n\Restore downloaded. Please restart and update Panes..."
     
     # Change directory back up one level and copy the script (adjust the path to your BootFolder)
