@@ -9,6 +9,6 @@ echo "This app is purely to link Lynx to work with Panes. Lynx is not made or ma
 sudo apt install Lynx
 mkdir Applications
 cd Applications
-git clone
+git clone https://github.com/cros-mstr/PanesSystemUpdate/blob/main/LYNXer.sh
 echo "Lynx is now installed!"
 echo "To use, type lynx frogfind.com  or any other website."
