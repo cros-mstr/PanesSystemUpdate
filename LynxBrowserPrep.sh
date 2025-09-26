@@ -5,7 +5,6 @@ PANESSource=ThirdParty
 UPDATE_TITLE="Lynx-Panes Linker"
 UPDATE_DESC="First Update of Lynx Command."
 VERSION=1
-InstallBrowser() {
 echo "This app is purely to link Lynx to work with Panes. Lynx is not made or maintained by the Panes team."
 sudo apt install Lynx
 mkdir Applications
@@ -16,4 +15,3 @@ echo "To use, type lynx frogfind.com  or any other website."}
 sleep 2
 echo "Early-Call Initialization Variables"
 echo "Early-Bird Initializer Prepped."}
-InstallBrowser
