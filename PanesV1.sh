@@ -11,10 +11,9 @@ printf '\033]11;#0F9096\007'
 #1053 ontrack
 #1054 appenhanced
 #1055 Spectrum
-#20 Swapper
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes 2.0 "Swapper" "
-UPDATE_DESC="You're eligible for P2.0! Panes 2.0 Swapper is the latest and greatest version of Panes. It includes a new application store, a revamped user interface, and many bug fixes and performance improvements. Enjoy!"
+UPDATE_TITLE="Panes OS 1.055 "Spectrum" "
+UPDATE_DESC="Panes OS 1.055 Codenamed Spectrum is an update to the system that allows for further customization settings. It also fixes and enhances the Restore process."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
@@ -73,37 +72,50 @@ fi
 # Function to draw the desktop
 draw_desktop() {
     clear
-    echo -e "\e[45;97m╔══════════════════════════════════════╗\e[0m"
-    printf "\e[45;97m║      \e[1mPanes $VERSION Desktop\e[0;45;97m           ║\e[0m\n"
-    echo -e "\e[45;97m╠══════════════════════════════════════╣\e[0m"
-    echo -e "\e[44;97m║  [1] Text Editor      [2] Calculator ║\e[0m"
-    echo -e "\e[44;97m║  [3] File Viewer      [4] Guess Game ║\e[0m"
-    echo -e "\e[44;97m║  [5] App Store        [6] Animation  ║\e[0m"
-    echo -e "\e[44;97m║  [7] Check Updates    [8] Reinstall  ║\e[0m"
-    echo -e "\e[44;97m║  [9] Exit                            ║\e[0m"
-    echo -e "\e[45;97m╠══════════════════════════════════════╣\e[0m"
-    echo -e "\e[1;36m║   Installed Applications            ║\e[0m"
-    echo -e "\e[45;97m╚══════════════════════════════════════╝\e[0m"
+    echo "============================="
+    echo "|    Panes $VERSION        |"
+    echo "|---------------------------|"
+    echo "|  [1] Text Editor          |"
+    echo "|  [2] Calculator           |"
+    echo "|  [3] File Viewer          |"
+    echo "|  [4] Guessing Game        |"
+    echo "|  [5] Application Store    |"
+    echo "|  [6] Animation            |"
+    echo "|  [7] Check for Updates    |"
+    echo "|  [8] Reinstall Panes      |"
+    echo "|  [9] Exit                 |"
+    echo "|---------------------------|"
+    echo "|   Installed Applications  |"
+    echo "|---------------------------|"
 
-    local app_dir="./Applications"
-    local app_counter=10
-    local temp_app_list="/tmp/panes_installed_apps_$$_$(date +%s).txt"
+    local app_dir="./Applications" # Changed to INSTALLED_DIR
+    local app_counter=10 # Start numbering installed apps from 10
+    local temp_app_list="/tmp/panes_installed_apps_$$_$(date +%s).txt" # Temporary file
 
+    # Clear the global array before re-populating it
     INSTALLED_APPS_GLOBAL=()
 
     if [ -d "$app_dir" ]; then
+        # Find .sh files and put their full paths into a temporary file
         find "$app_dir" -maxdepth 1 -type f -name "*.sh" | sort > "$temp_app_list"
+
+        # Now read from the temporary file into the array in the current shell
         while IFS= read -r app_path; do
             local app_filename=$(basename "$app_path")
             local app_display_name="${app_filename%.sh}"
+
             INSTALLED_APPS_GLOBAL+=("$app_filename")
-            printf "\e[1;35m  [%d] %s\e[0m\n" "$app_counter" "$app_display_name"
+            printf "|  [%d] %s\n" "$app_counter" "$app_display_name"
             ((app_counter++))
         done < "$temp_app_list"
     fi
+
+    # Clean up the temporary file
     rm -f "$temp_app_list"
-    echo -e "\e[45;97m══════════════════════════════════════\e[0m"
-    echo -e "\e[1;36mDesktop Ready!\e[0m"
+
+    echo "============================="
+    echo "Desktop"
+    echo "============================="
 }
 # ===================================================================
 # Application Management Functions (place these here)
@@ -297,10 +309,10 @@ recovery() {
 # Function for the Application Store
 app_store() {
     clear
-    echo -e "\e[44;97m===================================\e[0m"
-    echo -e "\e[44;97m|     \e[1mPanes Application Store\e[0;44;97m   |\e[0m"
-    echo -e "\e[44;97m===================================\e[0m"
-    echo -e "\e[36mFetching available applications...\e[0m"
+    echo "==================================="
+    echo "|       Panes Application Store   |"
+    echo "==================================="
+    echo "Fetching available applications..."
     sleep 1
 
     local app_dir="./Applications"
@@ -324,7 +336,6 @@ app_store() {
     local app_display_names=()
     local app_statuses=()
     local app_versions=() # To store remote versions for comparison
-    local app_descriptions=() # To store app descriptions
 
     # Read each app filename (without .sh) from the downloaded list
     echo "Gathering app details..."
@@ -350,23 +361,21 @@ app_store() {
         local remote_version="N/A"
         local local_version="0" # Assume 0 if not installed or version not found
 
-        # Download the remote script temporarily to get its version, title, and description
+        # Download the remote script temporarily to get its version and title
         local temp_remote_app_file="/tmp/remote_${full_script_name}_$$_$(date +%s)" # Unique temp file for each app
+        
+        # Explicit check for curl failure during remote script metadata download
         if ! curl -s "$remote_app_url" -o "$temp_remote_app_file"; then
-            echo -e "\e[33mWarning: Could not download remote info for '$full_script_name'. Skipping this app.\e[0m"
+            echo "Warning: Could not download remote info for '$full_script_name'. Skipping this app."
             rm -f "$temp_remote_app_file"
             continue # Skip if remote info can't be fetched
         fi
 
         remote_version=$(grep '^VERSION=' "$temp_remote_app_file" | cut -d'=' -f2 | tr -d '"')
-        remote_desc=$(grep '^UPDATE_DESC=' "$temp_remote_app_file" | cut -d'=' -f2- | tr -d '"')
         if [ -z "$remote_version" ]; then
             remote_version="1.0" # Default if version not found in remote script
         fi
-        if [ -z "$remote_desc" ]; then
-            remote_desc="No description available."
-        fi
-
+        
         # Check if installed locally
         if [ -f "$local_app_path" ]; then
             local_version=$(grep '^VERSION=' "$local_app_path" | cut -d'=' -f2 | tr -d '"')
@@ -386,7 +395,6 @@ app_store() {
         app_display_names+=("$app_base_name")       # Store the base name for display
         app_statuses+=("$status")
         app_versions+=("$remote_version") # Store remote version for future use
-        app_descriptions+=("$remote_desc")
     done < "$temp_repo_list_file"
 
     rm -f "$temp_repo_list_file" # Clean up the main repo list file
@@ -398,22 +406,22 @@ app_store() {
         return
     fi
 
-    # Display the store menu with color and descriptions
-    PS3=$'\e[1;36mSelect an application to install/update (or 0 to go back): \e[0m'
+    # Display the store menu
+    PS3="Select an application to install/update (or 0 to go back): "
     local options=()
     for ((idx=0; idx<${#app_filenames_in_repo[@]}; idx++)); do
         options+=("${app_display_names[idx]} ${app_statuses[idx]}")
     done
-
+    
     select choice in "${options[@]}" "Go Back"; do
         if [[ "$choice" == "Go Back" ]]; then
             break # Exit the select loop
         elif [[ -n "$choice" ]]; then
             local selected_index=$((REPLY - 1)) # REPLY is the number entered by user
-
+            
             # Input validation to prevent out-of-bounds access
             if (( selected_index < 0 || selected_index >= ${#app_filenames_in_repo[@]} )); then
-                echo -e "\e[31mInvalid selection number. Please choose a number from the list or 0.\e[0m"
+                echo "Invalid selection number. Please choose a number from the list or 0."
                 continue
             fi
 
@@ -421,10 +429,8 @@ app_store() {
             local selected_app_name="${app_display_names[selected_index]}"
             local remote_app_url="$base_repo_url$selected_app_filename" # Use the correct filename
             local selected_app_status="${app_statuses[selected_index]}"
-            local selected_app_desc="${app_descriptions[selected_index]}"
 
-            echo -e "\e[1;32mYou selected: ${selected_app_name} ${selected_app_status}\e[0m"
-            echo -e "\e[36mDescription: $selected_app_desc\e[0m"
+            echo "You selected: ${selected_app_name} ${selected_app_status}"
             echo "Preparing to install/update $selected_app_name..."
             sleep 1
 
@@ -437,22 +443,22 @@ app_store() {
             echo "Downloading $selected_app_name..."
             # Explicit check for curl failure during final application download
             if curl -s "$remote_app_url" -o "$local_app_path"; then
-                echo -e "\e[32mSuccessfully downloaded and ${action_message}d $selected_app_name!\e[0m"
+                echo "Successfully downloaded and ${action_message}d $selected_app_name!"
                 # Set execute permissions
                 chmod +x "$local_app_path"
             else
-                echo -e "\e[31mError: Failed to download $selected_app_name. Please check disk space and permissions for '$local_app_path' and network connection.\e[0m"
+                echo "Error: Failed to download $selected_app_name. Please check disk space and permissions for '$local_app_path' and network connection."
             fi
-            echo -e "\e[36mPress [Enter] to continue...\e[0m"
+            echo "Press [Enter] to continue..."
             read -r < /dev/tty # Ensure this read also uses /dev/tty
             break # Exit select loop after action
         else
-            echo -e "\e[31mInvalid option. Please enter a number from the list.\e[0m"
+            echo "Invalid option. Please enter a number from the list."
             # The select loop automatically re-prompts
         fi
     done < /dev/tty # Ensure select reads from terminal
 
-    echo -e "\e[36mReturning to main menu...\e[0m"
+    echo "Returning to main menu..."
     sleep 1
 }
 # Function to check and update individual applications in BootFolder/Applications
@@ -690,8 +696,8 @@ check_for_updates() {
             local REMOTE_VERSION=""
             local REMOTE_TITLE=""
             local REMOTE_DESC=""
-            local VERIFICATION_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
-            local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
+            local VERIFICATION_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesV1.sh"
+            local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/PanesV1.sh"
             local TEMP_UPDATE_FILE="/tmp/Panes_standard_update_$$.sh"
             local CURRENT_SCRIPT_PATH="$0"
 
@@ -774,7 +780,7 @@ check_for_updates() {
                     echo "Panes.sh update cancelled by user."
                 fi
             else
-                echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
+                echo "Panes.sh is already on the latest version ($LOCAL_VERSION). Please upgrade to PanesV2 through the Program Fetcher for new features."
             fi
             rm -f "$TEMP_UPDATE_FILE"
             echo "Press [Enter] to return to the desktop."
