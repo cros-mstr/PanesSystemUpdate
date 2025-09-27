@@ -14,13 +14,13 @@ printf '\033]11;#0F9096\007'
 #20 Swapper
 #Coming Soon in Beta: Installer
 UPDATE_TITLE="Panes 2.0 "Swapper" "
-UPDATE_DESC="You're eligible for P2.0! Panes 2.0 Swapper is the latest and greatest version of Panes. It includes a new application store, a revamped user interface, and many bug fixes and performance improvements. Enjoy!"
+UPDATE_DESC="Panes 2.0 Swapper is the latest and greatest version of Panes. It includes a new application store, a revamped user interface, and many bug fixes and performance improvements. Enjoy!"
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=2.000
+VERSION=2
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
