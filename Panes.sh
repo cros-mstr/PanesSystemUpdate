@@ -5,7 +5,10 @@ cd "$(dirname "$0")"
 #Changed to for readability and less strain
 printf '\033]11;#0F9096\007'
 
-# --- rest of your script follows ---
+#todo Add an installer app to RepoAvailableApps
+#Add a Classic mode that is the old panes with no app store
+#Add a OOBE (Out Of Box Experience) for first-time users
+#Login system coming soon
 #history
 #1052 beamed
 #1053 ontrack
