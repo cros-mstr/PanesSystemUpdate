@@ -12,17 +12,15 @@ printf '\033]11;#0F9096\007'
 #1054 appenhanced
 #1055 Spectrum
 #20 Swapper
-#21  Refresh
-#22 Snapper
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes 2.1 "Refresh" "
-UPDATE_DESC="Panes 2.1 Refresh is the latest and greatest version of Panes. It includes a new application store, a revamped user interface, and many bug fixes and performance improvements. Enjoy!"
+UPDATE_TITLE="Panes 2.0 "Swapper" "
+UPDATE_DESC="Panes 2.0 Swapper is the latest and greatest version of Panes. It includes a new application store, a revamped user interface, and many bug fixes and performance improvements. Enjoy!"
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=2.1
+VERSION=2
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
@@ -75,10 +73,14 @@ fi
 # Function to draw the desktop
 draw_desktop() {
     clear
-    # Location indicator at the top
-    echo -e "\e[1;44m Location: Desktop \e[0m\n"
     echo -e "\e[45;97m╔══════════════════════════════════════╗\e[0m"
     printf "\e[45;97m║      \e[1mPanes $VERSION Desktop\e[0;45;97m           ║\e[0m\n"
+    echo -e "\e[45;97m╠══════════════════════════════════════╣\e[0m"
+    echo -e "\e[44;97m║  [1] Text Editor      [2] Calculator ║\e[0m"
+    echo -e "\e[44;97m║  [3] File Viewer      [4] Guess Game ║\e[0m"
+    echo -e "\e[44;97m║  [5] App Store        [6] Animation  ║\e[0m"
+    echo -e "\e[44;97m║  [7] Check Updates    [8] Reinstall  ║\e[0m"
+    echo -e "\e[44;97m║  [9] Exit                            ║\e[0m"
     echo -e "\e[45;97m╠══════════════════════════════════════╣\e[0m"
     echo -e "\e[1;36m║   Installed Applications            ║\e[0m"
     echo -e "\e[45;97m╚══════════════════════════════════════╝\e[0m"
@@ -100,24 +102,7 @@ draw_desktop() {
         done < "$temp_app_list"
     fi
     rm -f "$temp_app_list"
-
-    # Horizontal menu at the bottom
-    local menu_items=(
-        "[1] Text Editor" "[2] Calculator" "[3] File Viewer" "[4] Guess Game" \
-        "[5] App Store" "[6] Animation" "[7] Check Updates" "[8] Reinstall" "[9] Exit"
-    )
-    local menu_line=""
-    local max_width=70
-    for item in "${menu_items[@]}"; do
-        if (( ${#menu_line} + ${#item} + 2 > max_width )); then
-            echo -e "\n$menu_line"
-            menu_line="$item  "
-        else
-            menu_line+="$item  "
-        fi
-    done
-    echo -e "\n$menu_line"
-    echo -e "\e[1;34m──────────────────────────────────────────────────────────────\e[0m"
+    echo -e "\e[45;97m══════════════════════════════════════\e[0m"
     echo -e "\e[1;36mDesktop Ready!\e[0m"
 }
 # ===================================================================
