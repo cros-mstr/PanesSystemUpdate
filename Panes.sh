@@ -20,7 +20,7 @@ UPDATE_DESC="You're eligible for P2.0! Panes 2.0 Swapper is the latest and great
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=1.055
+VERSION=2.0
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
