@@ -78,50 +78,67 @@ fi
 # Function to draw the desktop
 draw_desktop() {
     clear
-    # Location indicator at the top
-    echo -e "\e[1;44m Location: Desktop \e[0m\n"
-    echo -e "\e[45;97m╔══════════════════════════════════════╗\e[0m"
-    printf "\e[45;97m║      \e[1mPanes $VERSION Desktop\e[0;45;97m           ║\e[0m\n"
-    echo -e "\e[45;97m╠══════════════════════════════════════╣\e[0m"
-    echo -e "\e[1;36m║   Installed Applications            ║\e[0m"
-    echo -e "\e[45;97m╚══════════════════════════════════════╝\e[0m"
+    # Get terminal size
+    local term_rows term_cols
+    term_rows=$(tput lines)
+    term_cols=$(tput cols)
 
+    # Location indicator at the top
+    printf "\e[1;44m%-*s\e[0m\n" "$term_cols" " Location: Desktop "
+
+    # Calculate space for installed apps
     local app_dir="./Applications"
     local app_counter=10
     local temp_app_list="/tmp/panes_installed_apps_$$_$(date +%s).txt"
-
     INSTALLED_APPS_GLOBAL=()
 
+    # Collect installed apps
     if [ -d "$app_dir" ]; then
         find "$app_dir" -maxdepth 1 -type f -name "*.sh" | sort > "$temp_app_list"
         while IFS= read -r app_path; do
             local app_filename=$(basename "$app_path")
             local app_display_name="${app_filename%.sh}"
             INSTALLED_APPS_GLOBAL+=("$app_filename")
-            printf "\e[1;35m  [%d] %s\e[0m\n" "$app_counter" "$app_display_name"
-            ((app_counter++))
         done < "$temp_app_list"
     fi
     rm -f "$temp_app_list"
 
-    # Horizontal menu at the bottom
+    # Calculate how many lines are needed for installed apps
+    local app_lines=${#INSTALLED_APPS_GLOBAL[@]}
+    local content_height=$((term_rows-4)) # 1 for top, 2 for menu, 1 for spacing
+
+    # Print installed apps, filling vertical space
+    local i=0
+    while ((i < app_lines && i < content_height)); do
+        local app_filename="${INSTALLED_APPS_GLOBAL[i]}"
+        local app_display_name="${app_filename%.sh}"
+        printf "\e[1;35m  [%d] %s\e[0m\n" "$((10+i))" "$app_display_name"
+        ((i++))
+    done
+    # Fill remaining space with blank lines
+    while ((i < content_height)); do
+        echo
+        ((i++))
+    done
+
+    # Prepare horizontal menu for the bottom
     local menu_items=(
         "[1] Text Editor" "[2] Calculator" "[3] File Viewer" "[4] Guess Game" \
         "[5] App Store" "[6] Animation" "[7] Check Updates" "[8] Reinstall" "[9] Exit"
     )
     local menu_line=""
-    local max_width=70
     for item in "${menu_items[@]}"; do
-        if (( ${#menu_line} + ${#item} + 2 > max_width )); then
-            echo -e "\n$menu_line"
+        if (( ${#menu_line} + ${#item} + 2 > term_cols )); then
+            printf "%s\n" "$menu_line"
             menu_line="$item  "
         else
             menu_line+="$item  "
         fi
     done
-    echo -e "\n$menu_line"
-    echo -e "\e[1;34m──────────────────────────────────────────────────────────────\e[0m"
-    echo -e "\e[1;36mDesktop Ready!\e[0m"
+    printf "\e[1;44m%-*s\e[0m\n" "$term_cols" "$menu_line"
+    # Bottom bar
+    printf "\e[1;34m%-*s\e[0m\n" "$term_cols" "────────────────────────────────────────────────────────────────"
+    printf "\e[1;36m%-*s\e[0m\n" "$term_cols" "Desktop Ready!"
 }
 # ===================================================================
 # Application Management Functions (place these here)
