@@ -931,93 +931,191 @@ handle_main_menu_input() {
     esac
 }
 
-update_screen() {
+# Function to handle the Out-Of-Box Experience (OOBE)
+run_oobe() {
     clear
+    echo "==================================="
+    echo "| Welcome to Panes - Initial Setup |"
+    echo "==================================="
+    echo
 
-    # Paint the screen white, then black
-    printf '\033[47;30m' # White background, black text
-    clear
-    sleep 1
-    printf '\033[40;37m' # Black background, white text
-    clear
-    sleep 1
-
-    # Replay the Panes animation
-    animate_ascii_art
-
-    # Begin the update process
-    clear
-    local term_rows=$(tput lines)
-    local term_cols=$(tput cols)
-
-    # Centered text and loading bar
-    local title="Panes is updating. Please wait and do not exit the script"
-    local bar_width=$((term_cols / 2))
-    local bar_start_col=$(( (term_cols - bar_width) / 2 ))
-    local bar_start_row=$((term_rows / 2))
-    local progress_row=$((bar_start_row + 2))
-    local step_row=$((bar_start_row - 2))
-
-    local total_steps=100
-    local total_duration=45 # Total duration in seconds
-    local elapsed_time=0
-    local current_progress=0
-
-    while ((current_progress < total_steps)); do
-        clear
-
-        # Print the title
-        tput cup $((bar_start_row - 4)) $(( (term_cols - ${#title}) / 2 ))
-        echo -e "\e[1;37m$title\e[0m"
-
-        # Print the current step
-        tput cup $step_row $(( (term_cols - 20) / 2 ))
-        echo -e "\e[1;36mUpdating step $((current_progress / 10 + 1)) of 10...\e[0m"
-
-        # Draw the loading bar
-        tput cup $bar_start_row $bar_start_col
-        printf "\e[42m%*s\e[0m" $((current_progress * bar_width / total_steps)) ""
-        printf "\e[40m%*s\e[0m" $((bar_width - (current_progress * bar_width / total_steps))) ""
-
-        # Print the progress percentage
-        tput cup $progress_row $(( (term_cols - 6) / 2 ))
-        printf "\e[1;37m%3d%%\e[0m" "$current_progress"
-
-        # Randomize speed every few seconds
-        local speed=$((RANDOM % 10 + 1)) # Random speed between 1 and 10
-        local delay
-        if ((speed <= 2)); then
-            delay=2 # Slowest: 1% every 2 seconds
-        elif ((speed <= 5)); then
-            delay=1 # Medium: 1% every second
-        else
-            delay=0.1 # Fastest: 10% per second
-        fi
-
-        # Increment progress one step at a time
-        local steps_to_increment=$((RANDOM % 5 + 1)) # Random steps between 1 and 5
-        for ((i = 0; i < steps_to_increment && current_progress < total_steps; i++)); do
-            ((current_progress++))
-            sleep "$delay"
-            elapsed_time=$(echo "$elapsed_time + $delay" | bc)
-        done
-
-        # Ensure the total duration is approximately 45 seconds
-        if ((elapsed_time >= total_duration)); then
-            current_progress=$total_steps
-        fi
+    # Prompt for username
+    read -r -p "Enter your username: " username
+    while [[ -z "$username" ]]; do
+        echo "Username cannot be empty. Please try again."
+        read -r -p "Enter your username: " username
     done
 
-    # Final message after update
-    clear
-    tput cup $((term_rows / 2)) $(( (term_cols - 30) / 2 ))
-    echo -e "\e[1;32mUpdate complete! Restarting Panes...\e[0m"
-    sleep 3
-    exec bash "$0" # Restart the script
+    # Prompt for language
+    echo "Select your language:"
+    echo "1) English"
+    echo "2) Spanish"
+    echo "3) French"
+    echo "4) German"
+    echo "5) Other"
+    read -r -p "Enter the number corresponding to your language: " language_option
+    case $language_option in
+        1) language="English" ;;
+        2) language="Spanish" ;;
+        3) language="French" ;;
+        4) language="German" ;;
+        5) read -r -p "Enter your language: " language ;;
+        *) echo "Invalid option. Defaulting to English."; language="English" ;;
+    esac
+
+    # Prompt for password
+    read -r -p "Would you like to set a password? (y/n): " set_password
+    if [[ "$set_password" =~ ^[Yy]$ ]]; then
+        read -r -s -p "Enter your password: " password
+        echo
+        read -r -s -p "Confirm your password: " password_confirm
+        echo
+        if [[ "$password" != "$password_confirm" ]]; then
+            echo "Passwords do not match. Please try again."
+            run_oobe
+            return
+        fi
+    else
+        password=""
+    fi
+
+    # Save user data to UserData file
+    echo "USERNAME=$username" > UserData
+    echo "LANGUAGE=$language" >> UserData
+    if [[ -n "$password" ]]; then
+        echo "PASSWORD=$(echo "$password" | sha256sum | awk '{print $1}')" >> UserData
+    fi
+
+    echo "Setup complete! Your information has been saved."
+    sleep 2
 }
 
-# Main loop
-while true; do
-    draw_main_menu
-    handle_main_menu_input
-done
+# Function to handle user login
+login() {
+    clear
+    echo "==================================="
+    echo "|          Panes Login            |"
+    echo "==================================="
+    echo
+
+    # Read user data from UserData file
+    if [[ ! -f UserData ]]; then
+        echo "Error: UserData file not found. Please run the setup again."
+        exit 1
+    fi
+
+    source UserData
+
+    # Prompt for username
+    read -r -p "Username: " entered_username
+    if [[ "$entered_username" != "$USERNAME" ]]; then
+        echo "Invalid username. Exiting..."
+        exit 1
+    fi
+
+    # Prompt for password if it exists
+    if [[ -n "$PASSWORD" ]]; then
+        read -r -s -p "Password: " entered_password
+        echo
+        entered_password_hash=$(echo "$entered_password" | sha256sum | awk '{print $1}')
+        if [[ "$entered_password_hash" != "$PASSWORD" ]]; then
+            echo "Invalid password. Exiting..."
+            exit 1
+        fi
+    fi
+
+    echo "Login successful! Welcome, $USERNAME."
+    sleep 2
+}
+
+# Function to play the startup animation
+animate_ascii_art() {
+    local letters=("P" "A" "N" "E" "S")
+    local patterns=(
+        "   ****     *****     **   *     *****  *********************************"
+        "   *  *    **   **    * *  *     *     *           *    *     *"
+        "   ****    *******    *  * *     ****   *****      *    *      *******"
+        "   *       **   **    *   **     *           *     *    *             *"
+        "   ******************************************     *******      *******"
+    )
+
+    local delay=$(echo "$TOTAL_ANIMATION_DURATION / 20" | bc -l) # Calculate delay for the animation
+    local rows=${#patterns[@]} # Number of rows to animate
+
+    clear
+    for ((step=1; step<=${#patterns[0]}; step++)); do
+        for ((row=0; row<rows; row++)); do
+            tput cup $row 5 # Move cursor to the starting position for each row
+            echo -n "${patterns[row]:0:step}" # Print the already filled characters of each row
+        done
+        sleep $delay
+        clear
+    done
+    # Give some time to see the fully drawn letters
+    sleep 1
+}
+
+# Main script logic
+main() {
+    # Play the startup animation
+    animate_ascii_art
+
+    # Check if the UserData file exists
+    if [[ ! -f UserData ]]; then
+        # Run OOBE if UserData does not exist
+        run_oobe
+    fi
+
+    # Proceed to the desktop
+    while true; do
+        draw_desktop
+        read -r -p "Enter your choice: " menu_option < /dev/tty
+
+        case $menu_option in
+            1)
+                echo "Launching Text Editor..."
+                sleep 1
+                ;;
+            2)
+                echo "Launching Calculator..."
+                sleep 1
+                ;;
+            3)
+                echo "Launching File Viewer..."
+                sleep 1
+                ;;
+            4)
+                echo "Launching Guess Game..."
+                sleep 1
+                ;;
+            5)
+                echo "Opening App Store..."
+                sleep 1
+                app_store
+                ;;
+            6)
+                echo "Running Animation..."
+                sleep 1
+                ;;
+            7)
+                check_for_updates
+                ;;
+            8)
+                echo "Reinstalling Panes..."
+                sleep 1
+                ;;
+            9)
+                echo "Exiting Panes. Goodbye!"
+                sleep 1
+                exit 0
+                ;;
+            *)
+                echo "Invalid option. Please choose a valid number."
+                sleep 1
+                ;;
+        esac
+    done
+}
+
+# Start the script
+main
