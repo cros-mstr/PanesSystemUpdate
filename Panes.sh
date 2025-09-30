@@ -80,6 +80,9 @@ draw_desktop() {
     term_rows=$(tput lines)
     term_cols=$(tput cols)
 
+    # Add a blank line to move the Location bar down
+    printf "\n"
+
     # Location indicator at the top
     printf "\e[1;44m%-*s\e[0m\n" "$term_cols" " Location: Desktop "
 
