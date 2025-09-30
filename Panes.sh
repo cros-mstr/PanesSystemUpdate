@@ -761,19 +761,8 @@ check_for_updates() {
                 echo "A new Panes.sh version ($REMOTE_VERSION) is available."
                 read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
                 if [[ "$confirm_update" =~ ^[Yy]$ ]]; then
-                    echo "Updating Panes.sh..."
-                    local total_steps=100
-                    local total_duration=2   # Total duration for sleep in seconds — adjust as needed
-                    local step_duration=$(echo "$total_duration / $total_steps" | bc -l)
-
-                    for ((i=0; i<=total_steps; i++)); do
-                        sleep "$step_duration"
-                        printf "\rProgress: ["
-                        for ((j=0; j<i; j++)); do printf "#"; done
-                        for ((j=i; j<total_steps; j++)); do printf " "; done
-                        printf "] %d%%" "$((i * 100 / total_steps))"
-                    done
-                    printf "\r\n"
+                    # Call the update screen
+                    update_screen
 
                     # Download the updated script to a temp file first
                     local NEW_SCRIPT_TEMP="/tmp/Panes_new_script_$$.sh"
