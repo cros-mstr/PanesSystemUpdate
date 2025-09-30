@@ -705,7 +705,7 @@ dev_update() {
     echo "Press [Enter] to return to the main menu."
     read -r < /dev/tty
 }
-# Modified check_for_updates function
+# Modified check_for_updates function 
 check_for_updates() {
     clear
     echo "==================================="
