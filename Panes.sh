@@ -758,36 +758,41 @@ check_for_updates() {
             echo "Update Title: $REMOTE_TITLE"
             echo "Update Description: $REMOTE_DESC"
 
-            # Always update if the user chooses to, even if the version is the same
-            read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
-            if [[ "$confirm_update" =~ ^[Yy]$ ]]; then
-                # Call the update screen
+            # Only update if the remote version is newer
+            if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
+                read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
+                if [[ "$confirm_update" =~ ^[Yy]$ ]]; then
+                    # Call the update animation
+                    update_animation
 
-                # Download the updated script to a temp file first
-                local NEW_SCRIPT_TEMP="/tmp/Panes_new_script_$$.sh"
-                if curl -s "$DOWNLOAD_URL" -o "$NEW_SCRIPT_TEMP"; then
-                    # Replace the running script atomically
-                    if mv "$NEW_SCRIPT_TEMP" "$CURRENT_SCRIPT_PATH" && chmod +x "$CURRENT_SCRIPT_PATH"; then
-                        echo "Panes.sh updated successfully to version $REMOTE_VERSION!"
-                        echo "Restarting Panes.sh to apply the update..."
-                        sleep 2
-                        exec bash "$CURRENT_SCRIPT_PATH" # Restart the updated script
+                    # Download the updated script to a temp file first
+                    local NEW_SCRIPT_TEMP="/tmp/Panes_new_script_$$.sh"
+                    if curl -s "$DOWNLOAD_URL" -o "$NEW_SCRIPT_TEMP"; then
+                        # Replace the running script atomically
+                        if mv "$NEW_SCRIPT_TEMP" "$CURRENT_SCRIPT_PATH" && chmod +x "$CURRENT_SCRIPT_PATH"; then
+                            echo "Panes.sh updated successfully to version $REMOTE_VERSION!"
+                            echo "Restarting Panes.sh to apply the update..."
+                            sleep 2
+                            exec bash "$CURRENT_SCRIPT_PATH" # Restart the updated script
+                        else
+                            echo "Error: Failed to replace the existing Panes.sh script. Update aborted."
+                            rm -f "$NEW_SCRIPT_TEMP"
+                            echo "Press [Enter] to return."
+                            read -r < /dev/tty
+                            return
+                        fi
                     else
-                        echo "Error: Failed to replace the existing Panes.sh script. Update aborted."
-                        rm -f "$NEW_SCRIPT_TEMP"
+                        echo "Error: Failed to download the updated script. Update aborted."
+                        rm -f "$TEMP_UPDATE_FILE"
                         echo "Press [Enter] to return."
                         read -r < /dev/tty
                         return
                     fi
                 else
-                    echo "Error: Failed to download the updated script. Update aborted."
-                    rm -f "$TEMP_UPDATE_FILE"
-                    echo "Press [Enter] to return."
-                    read -r < /dev/tty
-                    return
+                    echo "Panes.sh update cancelled by user."
                 fi
             else
-                echo "Panes.sh update cancelled by user."
+                echo "Panes.sh is already up-to-date (Version: $LOCAL_VERSION)."
             fi
             rm -f "$TEMP_UPDATE_FILE"
             echo "Press [Enter] to return to the desktop."
@@ -1056,6 +1061,84 @@ animate_ascii_art() {
     done
     # Give some time to see the fully drawn letters
     sleep 1
+}
+
+# Function to display the update animation with a progress bar
+update_animation() {
+    clear
+    printf '\033[40;37m' # Black background, white text
+    clear
+
+    # Play the Panes startup animation
+    animate_ascii_art
+
+    # Get terminal size
+    local term_rows=$(tput lines)
+    local term_cols=$(tput cols)
+
+    # Centered text and loading bar
+    local title="Updating Panes, please do not disturb the system"
+    local bar_width=$((term_cols / 2))
+    local bar_start_col=$(( (term_cols - bar_width) / 2 ))
+    local bar_start_row=$((term_rows / 2))
+    local progress_row=$((bar_start_row + 2))
+    local step_row=$((bar_start_row - 2))
+
+    local total_steps=100
+    local total_duration=35 # Total duration in seconds
+    local elapsed_time=0
+    local current_progress=0
+
+    while ((current_progress < total_steps)); do
+        clear
+
+        # Print the title above the loading bar
+        tput cup $((bar_start_row - 4)) $(( (term_cols - ${#title}) / 2 ))
+        echo -e "\e[1;37m$title\e[0m"
+
+        # Print the current step below the loading bar
+        tput cup $step_row $(( (term_cols - 20) / 2 ))
+        echo -e "\e[1;36mPerforming update step $((current_progress / 10 + 1)) of 10...\e[0m"
+
+        # Draw the loading bar
+        tput cup $bar_start_row $bar_start_col
+        printf "\e[42m%*s\e[0m" $((current_progress * bar_width / total_steps)) ""
+        printf "\e[40m%*s\e[0m" $((bar_width - (current_progress * bar_width / total_steps))) ""
+
+        # Print the progress percentage below the bar
+        tput cup $progress_row $(( (term_cols - 6) / 2 ))
+        printf "\e[1;37m%3d%%\e[0m" "$current_progress"
+
+        # Randomize speed every few seconds
+        local speed=$((RANDOM % 10 + 1)) # Random speed between 1 and 10
+        local delay
+        if ((speed <= 2)); then
+            delay=2 # Slowest: 1% every 2 seconds
+        elif ((speed <= 5)); then
+            delay=1 # Medium: 1% every second
+        else
+            delay=0.1 # Fastest: 10% per second
+        fi
+
+        # Increment progress one step at a time
+        local steps_to_increment=$((RANDOM % 5 + 1)) # Random steps between 1 and 5
+        for ((i = 0; i < steps_to_increment && current_progress < total_steps; i++)); do
+            ((current_progress++))
+            sleep "$delay"
+            elapsed_time=$(echo "$elapsed_time + $delay" | bc)
+        done
+
+        # Ensure the total duration is approximately 35 seconds
+        if ((elapsed_time >= total_duration)); then
+            current_progress=$total_steps
+        fi
+    done
+
+    # Final message after update
+    clear
+    tput cup $((term_rows / 2)) $(( (term_cols - 30) / 2 ))
+    echo -e "\e[1;32mUpdate complete! Restarting Panes...\e[0m"
+    sleep 3
 }
 
 # Main script logic
