@@ -76,9 +76,8 @@ fi
 draw_desktop() {
     clear
     # Get terminal size
-    local term_rows term_cols
-    term_rows=$(tput lines)
-    term_cols=$(tput cols)
+    local term_rows=$(tput lines)
+    local term_cols=$(tput cols)
 
     # Add a blank line to move the Location bar down
     printf "\n"
@@ -996,6 +995,7 @@ run_oobe() {
             return
         fi
     else
+    else
         password=""
     fi
 
@@ -1202,11 +1202,30 @@ main() {
         run_oobe
     fi
 
+    # Log in the user
+    login
+
     # Proceed to the desktop
     while true; do
         draw_desktop
         read -r -p "Enter your choice: " menu_option < /dev/tty
 
+        # Check if the input corresponds to an installed application
+        if [[ "$menu_option" =~ ^[0-9]+$ ]]; then
+            local app_index=$((menu_option - 10))
+            if ((app_index >= 0 && app_index < ${#INSTALLED_APPS_GLOBAL[@]})); then
+                local selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"
+                if [[ -f "$selected_app" ]]; then
+                    launch_application "$selected_app"
+                else
+                    echo "Error: Application not found."
+                    sleep 2
+                fi
+                continue
+            fi
+        fi
+
+        # Handle other menu options
         case $menu_option in
             1)
                 echo "Launching Text Editor..."
