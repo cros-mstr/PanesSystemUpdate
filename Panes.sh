@@ -826,6 +826,7 @@ factory_reset() {
     echo "==================================="
     echo "[1] Reset Panes.sh to Default (Local)"
     echo "[2] Download Latest Panes.sh (Internet)"
+    echo "[3] Delete User Data"
     echo "[0] Cancel"
     echo "==================================="
     read -r -p "Enter your choice: " reset_option < /dev/tty
@@ -862,12 +863,23 @@ factory_reset() {
                 read -r < /dev/tty
             fi
             ;;
+        3)
+            echo "Deleting user data..."
+            if [ -f "UserData" ]; then
+                rm -f "UserData"
+                echo "User data has been deleted."
+            else
+                echo "No user data found to delete."
+            fi
+            echo "Press [Enter] to return to the factory reset menu."
+            read -r < /dev/tty
+            ;;
         0)
             echo "Factory reset cancelled."
             sleep 1
             ;;
         *)
-            echo "Invalid option. Please choose 1, 2, or 0."
+            echo "Invalid option. Please choose 1, 2, 3, or 0."
             sleep 1
             ;;
     esac
