@@ -73,9 +73,6 @@ fi
 }
 
 # Function to draw the desktop
-# Function to draw the desktop
-# Function to draw the desktop
-# Function to draw the desktop
 draw_desktop() {
     clear
     # Get terminal size
@@ -105,7 +102,7 @@ draw_desktop() {
 
     # Calculate how many lines are needed for installed apps
     local app_lines=${#INSTALLED_APPS_GLOBAL[@]}
-    local content_height=$((term_rows-4)) # 1 for top, 2 for menu, 1 for spacing
+    local content_height=$((term_rows - 4)) # 1 for top, 2 for menu, 1 for spacing
 
     # Print installed apps, filling vertical space
     local i=0
@@ -649,7 +646,7 @@ dev_update() {
     fi
 
     # *** CRITICAL CHANGE HERE ***
-    # Extract only the value of 'devkey' from the downloaded file
+    #
     local stored_dev_key=$(grep '^devkey=' "$temp_dev_key_file" | cut -d'=' -f2 | xargs)
     # ^^^ This finds the line starting with "devkey=", cuts by "=", takes the second field (the value), and trims whitespace.
 
@@ -758,51 +755,36 @@ check_for_updates() {
             echo "Update Title: $REMOTE_TITLE"
             echo "Update Description: $REMOTE_DESC"
 
-            if (( $(echo "$REMOTE_VERSION > $LOCAL_VERSION" | bc -l) )); then
-                echo "A new Panes.sh version ($REMOTE_VERSION) is available."
-                read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
-                if [[ "$confirm_update" =~ ^[Yy]$ ]]; then
-                    # Call the update screen
-                    update_screen
+            # Always update if the user chooses to, even if the version is the same
+            read -r -p "Proceed with update? (y/n): " confirm_update < /dev/tty
+            if [[ "$confirm_update" =~ ^[Yy]$ ]]; then
+                # Call the update screen
 
-                    # Download the updated script to a temp file first
-                    local NEW_SCRIPT_TEMP="/tmp/Panes_new_script_$$.sh"
-                    if curl -s "$DOWNLOAD_URL" -o "$NEW_SCRIPT_TEMP"; then
-                        # Validate update by checking VERSION field in downloaded file
-                        local NEW_VERSION_CHECK=$(grep '^VERSION=' "$NEW_SCRIPT_TEMP" | cut -d'=' -f2 | tr -d '"')
-                        if [ "$NEW_VERSION_CHECK" != "$REMOTE_VERSION" ]; then
-                            echo "Error: Downloaded script version mismatch. Update aborted."
-                            rm -f "$NEW_SCRIPT_TEMP" "$TEMP_UPDATE_FILE"
-                            echo "Press [Enter] to return."
-                            read -r < /dev/tty
-                            return
-                        fi
-
-                        # Replace the running script atomically
-                        if mv "$NEW_SCRIPT_TEMP" "$CURRENT_SCRIPT_PATH" && chmod +x "$CURRENT_SCRIPT_PATH"; then
-                            echo "Panes.sh updated successfully to version $NEW_VERSION_CHECK!"
-                            echo "Please restart Panes.sh to run the updated version."
-                            rm -f "$TEMP_UPDATE_FILE"
-                            exit 0
-                        else
-                            echo "Error: Failed to replace the existing Panes.sh script. Update aborted."
-                            rm -f "$NEW_SCRIPT_TEMP" "$TEMP_UPDATE_FILE"
-                            echo "Press [Enter] to return."
-                            read -r < /dev/tty
-                            return
-                        fi
+                # Download the updated script to a temp file first
+                local NEW_SCRIPT_TEMP="/tmp/Panes_new_script_$$.sh"
+                if curl -s "$DOWNLOAD_URL" -o "$NEW_SCRIPT_TEMP"; then
+                    # Replace the running script atomically
+                    if mv "$NEW_SCRIPT_TEMP" "$CURRENT_SCRIPT_PATH" && chmod +x "$CURRENT_SCRIPT_PATH"; then
+                        echo "Panes.sh updated successfully to version $REMOTE_VERSION!"
+                        echo "Restarting Panes.sh to apply the update..."
+                        sleep 2
+                        exec bash "$CURRENT_SCRIPT_PATH" # Restart the updated script
                     else
-                        echo "Error: Failed to download the updated script. Update aborted."
-                        rm -f "$TEMP_UPDATE_FILE"
+                        echo "Error: Failed to replace the existing Panes.sh script. Update aborted."
+                        rm -f "$NEW_SCRIPT_TEMP"
                         echo "Press [Enter] to return."
                         read -r < /dev/tty
                         return
                     fi
                 else
-                    echo "Panes.sh update cancelled by user."
+                    echo "Error: Failed to download the updated script. Update aborted."
+                    rm -f "$TEMP_UPDATE_FILE"
+                    echo "Press [Enter] to return."
+                    read -r < /dev/tty
+                    return
                 fi
             else
-                echo "Panes.sh is already on the latest version ($LOCAL_VERSION)."
+                echo "Panes.sh update cancelled by user."
             fi
             rm -f "$TEMP_UPDATE_FILE"
             echo "Press [Enter] to return to the desktop."
@@ -947,6 +929,91 @@ handle_main_menu_input() {
             sleep 1
             ;;
     esac
+}
+
+update_screen() {
+    clear
+
+    # Paint the screen white, then black
+    printf '\033[47;30m' # White background, black text
+    clear
+    sleep 1
+    printf '\033[40;37m' # Black background, white text
+    clear
+    sleep 1
+
+    # Replay the Panes animation
+    animate_ascii_art
+
+    # Begin the update process
+    clear
+    local term_rows=$(tput lines)
+    local term_cols=$(tput cols)
+
+    # Centered text and loading bar
+    local title="Panes is updating. Please wait and do not exit the script"
+    local bar_width=$((term_cols / 2))
+    local bar_start_col=$(( (term_cols - bar_width) / 2 ))
+    local bar_start_row=$((term_rows / 2))
+    local progress_row=$((bar_start_row + 2))
+    local step_row=$((bar_start_row - 2))
+
+    local total_steps=100
+    local total_duration=45 # Total duration in seconds
+    local elapsed_time=0
+    local current_progress=0
+
+    while ((current_progress < total_steps)); do
+        clear
+
+        # Print the title
+        tput cup $((bar_start_row - 4)) $(( (term_cols - ${#title}) / 2 ))
+        echo -e "\e[1;37m$title\e[0m"
+
+        # Print the current step
+        tput cup $step_row $(( (term_cols - 20) / 2 ))
+        echo -e "\e[1;36mUpdating step $((current_progress / 10 + 1)) of 10...\e[0m"
+
+        # Draw the loading bar
+        tput cup $bar_start_row $bar_start_col
+        printf "\e[42m%*s\e[0m" $((current_progress * bar_width / total_steps)) ""
+        printf "\e[40m%*s\e[0m" $((bar_width - (current_progress * bar_width / total_steps))) ""
+
+        # Print the progress percentage
+        tput cup $progress_row $(( (term_cols - 6) / 2 ))
+        printf "\e[1;37m%3d%%\e[0m" "$current_progress"
+
+        # Randomize speed every few seconds
+        local speed=$((RANDOM % 10 + 1)) # Random speed between 1 and 10
+        local delay
+        if ((speed <= 2)); then
+            delay=2 # Slowest: 1% every 2 seconds
+        elif ((speed <= 5)); then
+            delay=1 # Medium: 1% every second
+        else
+            delay=0.1 # Fastest: 10% per second
+        fi
+
+        # Increment progress one step at a time
+        local steps_to_increment=$((RANDOM % 5 + 1)) # Random steps between 1 and 5
+        for ((i = 0; i < steps_to_increment && current_progress < total_steps; i++)); do
+            ((current_progress++))
+            sleep "$delay"
+            elapsed_time=$(echo "$elapsed_time + $delay" | bc)
+        done
+
+        # Ensure the total duration is approximately 45 seconds
+        if ((elapsed_time >= total_duration)); then
+            current_progress=$total_steps
+        fi
+    done
+
+    # Final message after update
+    clear
+    tput cup $((term_rows / 2)) $(( (term_cols - 30) / 2 ))
+    echo -e "\e[1;32mUpdate complete! Restarting Panes...\e[0m"
+    sleep 3
+    exec bash "$0" # Restart the script
 }
 
 # Main loop
