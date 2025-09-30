@@ -608,7 +608,7 @@ check_application_updates() {
         else
             echo "  $app_filename is already on the latest version ($local_app_version)."
         fi
-    done 3<&0 # This redirects the original stdin (FD 0) to FD 3 for the `find` loop
+    done 3<&0 # This redirects the original stdin (FD 0) to FD 3 for the `find` loop.
               # and makes FD 0 available for `read` commands within the loop.
 
     echo -e "\n--- Application Update Check Complete ---"
