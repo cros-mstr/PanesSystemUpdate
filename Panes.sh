@@ -717,6 +717,7 @@ check_for_updates() {
     echo "[1] Update Panes.sh (Standard)"
     echo "[2] Check and Update Applications"
     echo "[3] Developer Update (Requires Key)" # <-- Developer Update option here
+    echo "[4] Factory Reset"
     echo "[0] Back to Main Menu"
     echo "==================================="
     read -r -p "Enter your choice: " update_option < /dev/tty
@@ -813,209 +814,143 @@ check_for_updates() {
         3)
             dev_update
             ;;
+        4)
+            factory_reset
+            ;;
         0)
             echo "Returning to main menu."
             sleep 1
             ;;
         *)
-            echo "Invalid option. Please choose 1, 2, 3, or 0."
+            echo "Invalid option. Please choose 1, 2, 3, 4, or 0."
             sleep 1
             ;;
     esac
 }
 
-ReInstall() {
+# Factory Reset Function
+factory_reset() {
     clear
-    echo "============================="
-    echo "|       Reinstall PANES     |"
-    echo "============================="
-    echo "Panes Restore: Grappling Latest PANES"
-    sleep 1
-    echo "Panes Restore: Prepping for restoration. Downloading..."
+    echo "==================================="
+    echo "|         Factory Reset           |"
+    echo "==================================="
+    echo "[1] Reset Panes.sh to Default (Local)"
+    echo "[2] Download Latest Panes.sh (Internet)"
+    echo "[0] Cancel"
+    echo "==================================="
+    read -r -p "Enter your choice: " reset_option < /dev/tty
 
-    # Displaying a progress bar
-    local total_steps=20 # Total number of steps to display progress
-    local step_duration=$(( TOTAL_UPDATE_DURATION * 10 / total_steps )) # Duration of each step
-    for ((i=0; i<=total_steps; i++)); do
-        sleep $step_duration
-        printf "\rProgress: ["
-        for ((j=0; j<i; j++)); do
-            printf "#"
-        done
-        for ((j=i; j<total_steps; j++)); do
-            printf " "
-        done
-        printf "] %d%%" $((i * 100 / total_steps))
-    done
-    curl -L -o Panes.sh "https://github.com/cros-mstr/PanesSystemUpdate/raw/main/PanesBackup.sh"
-    #Maybe put a version downgrade here to change the variable? Results in arithmetic operation error at line 728.
-    echo -e "\n\Restore downloaded. Please restart and update Panes..."
-    
-    # Change directory back up one level and copy the script (adjust the path to your BootFolder)
-#Or upload a version of panes with a downgraded version and replace this one with that.
-}
-
-# Function to update the screen with animation and progress
-update_screen() {
-    clear
-
-    # Paint the screen white, then black
-    printf '\033[47;30m' # White background, black text
-    clear
-    sleep 1
-    printf '\033[40;37m' # Black background, white text
-    clear
-    sleep 1
-
-    # Replay the Panes animation
-    animate_ascii_art
-
-    # Begin the update process
-    clear
-    local term_rows=$(tput lines)
-    local term_cols=$(tput cols)
-
-    # Centered text and loading bar
-    local title="Panes is updating. Please wait and do not exit the script"
-    local bar_width=$((term_cols / 2))
-    local bar_start_col=$(( (term_cols - bar_width) / 2 ))
-    local bar_start_row=$((term_rows / 2))
-    local progress_row=$((bar_start_row + 2))
-    local step_row=$((bar_start_row - 2))
-
-    local total_steps=100
-    local total_duration=45 # Total duration in seconds
-    local step_duration=$(echo "$total_duration / $total_steps" | bc -l)
-
-    for ((i = 0; i <= total_steps; i++)); do
-        clear
-
-        # Print the title
-        tput cup $((bar_start_row - 4)) $(( (term_cols - ${#title}) / 2 ))
-        echo -e "\e[1;37m$title\e[0m"
-
-        # Print the current step
-        tput cup $step_row $(( (term_cols - 20) / 2 ))
-        echo -e "\e[1;36mUpdating step $((i / 10 + 1)) of 10...\e[0m"
-
-        # Draw the loading bar
-        tput cup $bar_start_row $bar_start_col
-        printf "\e[42m%*s\e[0m" $((i * bar_width / total_steps)) ""
-        printf "\e[40m%*s\e[0m" $((bar_width - (i * bar_width / total_steps))) ""
-
-        # Print the progress percentage
-        tput cup $progress_row $(( (term_cols - 6) / 2 ))
-        printf "\e[1;37m%3d%%\e[0m" "$i"
-
-        sleep "$step_duration"
-    done
-
-    # Final message after update
-    clear
-    tput cup $((term_rows / 2)) $(( (term_cols - 30) / 2 ))
-    echo -e "\e[1;32mUpdate complete! Restarting Panes...\e[0m"
-    sleep 3
-    exec bash "$0" # Restart the script
-}
-
-# Initial animations when the script is first run
-shooting_star & # Run shooting star animation in background
-spinner_pid=0
-
-# Start spinner in the background
-#spinner & spinner_pid=$!
-#caused too many issues, no spinner
-# Wait and check if the animation completes in 10 seconds
-(animate_ascii_art &)
-ANIMATION_PID=$!
-
-# Wait for the animation to finish or timeout after 10 seconds
-( sleep 10; kill -TERM $ANIMATION_PID 2>/dev/null ) &
-
-# Wait for the animation process
-wait $ANIMATION_PID
-if [ $? -ne 0 ]; then
-    kill $spinner_pid 2>/dev/null  # Stop the spinner
-    recovery # Call recovery if the animation did not finish successfully
-fi
-#deprecated spinner
-#wait $spinner_pid
-# Wait for spinner to finish
-
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-# Main loop for the GUI
-while true; do
-    draw_desktop # This populates INSTALLED_APPS_GLOBAL and prints desktop options
-
-    num_fixed_options=9 # Options 1-9 (1-9 are hardcoded functions)
-    installed_apps_start_num=10 # Installed apps start from this number
-    num_installed_apps=${#INSTALLED_APPS_GLOBAL[@]}
-
-    read -r -p "Enter your choice: " option # Allow multi-digit input, with prompt
-
-    # First, validate input is a number
-    if ! [[ "$option" =~ ^[0-9]+$ ]]; then
-        echo "Invalid input. Please enter a number."
-        sleep 1
-        continue # Go back to drawing the desktop
-    fi
-
-    # Now, handle the numerical options using if/elif
-    if (( option >= 1 && option <= num_fixed_options )); then
-        # Handle fixed options (1-9)
-        case $option in
-            1)
-                text_editor
-                ;;
-            2)
-                calculator
-                ;;
-            3)
-                file_viewer
-                ;;
-            4)
-                guessing_game
-                ;;
-            5)
-                app_store
-                ;;
-            6)
-                shooting_star
-                draw_ascii_art
-                ;;
-            7)
-                check_for_updates
-                ;;
-            8)
-                ReInstall
-                ;;
-            9)
-                clear
-                echo "Exiting Panes..."
-                sleep 1
+    case $reset_option in
+        1)
+            echo "Resetting Panes.sh to default (local backup)..."
+            local DEFAULT_SCRIPT_PATH="./PanesBackup.sh"
+            if [ -f "$DEFAULT_SCRIPT_PATH" ]; then
+                cp "$DEFAULT_SCRIPT_PATH" "$0"
+                chmod +x "$0"
+                echo "Panes.sh has been reset to its default state."
+                echo "Please restart Panes.sh to apply changes."
                 exit 0
-                ;;
-        esac
-    elif (( option >= installed_apps_start_num && option < installed_apps_start_num + num_installed_apps )); then
-        # Handle dynamically added installed applications (numbers 10 and above)
-        selected_index_for_array=$((option - installed_apps_start_num))
-        selected_app_filename="${INSTALLED_APPS_GLOBAL[selected_index_for_array]}"
-
-        if [ -n "$selected_app_filename" ]; then
-            app_menu "$selected_app_filename"
-        else
-            echo "Error: Could not determine selected application."
+            else
+                echo "Error: Default backup script not found. Reset aborted."
+                echo "Press [Enter] to return."
+                read -r < /dev/tty
+            fi
+            ;;
+        2)
+            echo "Downloading the latest Panes.sh..."
+            local DOWNLOAD_URL="https://raw.githubusercontent.com/cros-mstr/PanesSystemUpdate/refs/heads/main/Panes.sh"
+            local TEMP_SCRIPT_PATH="/tmp/Panes_latest_$$.sh"
+            if curl -s "$DOWNLOAD_URL" -o "$TEMP_SCRIPT_PATH"; then
+                mv "$TEMP_SCRIPT_PATH" "$0"
+                chmod +x "$0"
+                echo "Panes.sh has been updated to the latest version."
+                echo "Please restart Panes.sh to apply changes."
+                exit 0
+            else
+                echo "Error: Failed to download the latest Panes.sh. Reset aborted."
+                echo "Press [Enter] to return."
+                read -r < /dev/tty
+            fi
+            ;;
+        0)
+            echo "Factory reset cancelled."
             sleep 1
-        fi
-    # NEW: Explicit elif for invalid numeric options
-    elif (( option < 1 || (option > num_fixed_options && option < installed_apps_start_num) || option >= installed_apps_start_num + num_installed_apps )); then
-        echo "Invalid option. Please select a valid number from the list."
-        sleep 1
-    fi
+            ;;
+        *)
+            echo "Invalid option. Please choose 1, 2, or 0."
+            sleep 1
+            ;;
+    esac
+}
+# ===================================================================
+# User Interface Functions (Text-Based UI)
+# ===================================================================
+
+# Function to draw the main menu
+draw_main_menu() {
+    clear
+    echo "==================================="
+    echo "|          Panes Menu            |"
+    echo "==================================="
+    echo "[1] Launch Application"
+    echo "[2] Install New Application"
+    echo "[3] Check for Updates"
+    echo "[4] Developer Options"
+    echo "[5] Factory Reset"
+    echo "[0] Exit"
+    echo "==================================="
+}
+
+# Function to handle user input for the main menu
+handle_main_menu_input() {
+    read -r -p "Enter your choice: " menu_option < /dev/tty
+
+    case $menu_option in
+        1)
+            # Launch installed application menu
+            echo "Launching installed applications..."
+            sleep 1
+            app_menu "${INSTALLED_APPS_GLOBAL[0]}"
+            ;;
+        2)
+            # Open application store
+            echo "Opening Panes Application Store..."
+            sleep 1
+            app_store
+            ;;
+        3)
+            # Check for updates
+            echo "Checking for updates..."
+            sleep 1
+            check_for_updates
+            ;;
+        4)
+            # Developer options (if any)
+            echo "Opening developer options..."
+            sleep 1
+            dev_update
+            ;;
+        5)
+            # Factory reset
+            echo "Starting factory reset process..."
+            sleep 1
+            factory_reset
+            ;;
+        0)
+            # Exit the script
+            echo "Exiting Panes. Goodbye!"
+            sleep 1
+            exit 0
+            ;;
+        *)
+            echo "Invalid option. Please choose a valid number."
+            sleep 1
+            ;;
+    esac
+}
+
+# Main loop
+while true; do
+    draw_main_menu
+    handle_main_menu_input
 done
