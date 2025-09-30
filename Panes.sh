@@ -1000,7 +1000,7 @@ login() {
 
     # Read user data from UserData file
     if [[ ! -f UserData ]]; then
-        echo "Error: UserData file not found. Please run the setup again."
+        echo "Error 256: Login Data Non-existent. Please re-run setup."
         exit 1
     fi
 
