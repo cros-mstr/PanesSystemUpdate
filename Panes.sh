@@ -1013,39 +1013,66 @@ run_oobe() {
 # Function to handle user login
 login() {
     clear
-    echo "==================================="
-    echo "|          Panes Login            |"
-    echo "==================================="
-    echo
+    local term_rows=$(tput lines)
+    local term_cols=$(tput cols)
 
     # Read user data from UserData file
     if [[ ! -f UserData ]]; then
-        echo "Error 256: Login Data Non-existent. Please re-run setup."
+        echo "Error: UserData file not found. Please run the setup again."
         exit 1
     fi
 
     source UserData
 
-    # Prompt for username
-    read -r -p "Username: " entered_username
-    if [[ "$entered_username" != "$USERNAME" ]]; then
-        echo "Invalid username. Exiting..."
-        exit 1
-    fi
+    while true; do
+        clear
+        local title="Panes Login"
+        local prompt="Enter your password:"
+        local username_prompt="Enter your username:"
+        local error_message="Invalid username or password. Please try again."
 
-    # Prompt for password if it exists
-    if [[ -n "$PASSWORD" ]]; then
-        read -r -s -p "Password: " entered_password
-        echo
-        entered_password_hash=$(echo "$entered_password" | sha256sum | awk '{print $1}')
-        if [[ "$entered_password_hash" != "$PASSWORD" ]]; then
-            echo "Invalid password. Exiting..."
-            exit 1
+        # Display the login screen
+        tput cup $((term_rows / 2 - 3)) $(( (term_cols - ${#title}) / 2 ))
+        echo -e "\e[1;37m$title\e[0m"
+
+        tput cup $((term_rows / 2 - 1)) $(( (term_cols - ${#username_prompt}) / 2 ))
+        echo -e "\e[1;36m$username_prompt\e[0m"
+
+        tput cup $((term_rows / 2)) $(( (term_cols - 20) / 2 ))
+        read -r entered_username
+
+        if [[ "$entered_username" != "$USERNAME" ]]; then
+            tput cup $((term_rows / 2 + 2)) $(( (term_cols - ${#error_message}) / 2 ))
+            echo -e "\e[1;31m$error_message\e[0m"
+            sleep 2
+            continue
         fi
-    fi
 
-    echo "Login successful! Welcome, $USERNAME."
-    sleep 2
+        if [[ -n "$PASSWORD" ]]; then
+            tput cup $((term_rows / 2 + 1)) $(( (term_cols - ${#prompt}) / 2 ))
+            echo -e "\e[1;36m$prompt\e[0m"
+
+            tput cup $((term_rows / 2 + 2)) $(( (term_cols - 20) / 2 ))
+            read -r -s entered_password
+            echo
+
+            local entered_password_hash=$(echo "$entered_password" | sha256sum | awk '{print $1}')
+            if [[ "$entered_password_hash" != "$PASSWORD" ]]; then
+                tput cup $((term_rows / 2 + 4)) $(( (term_cols - ${#error_message}) / 2 ))
+                echo -e "\e[1;31m$error_message\e[0m"
+                sleep 2
+                continue
+            fi
+        else
+            tput cup $((term_rows / 2 + 1)) $(( (term_cols - 30) / 2 ))
+            echo -e "\e[1;36mNo password set. Press Enter to log in.\e[0m"
+            read -r
+        fi
+
+        echo "Login successful! Welcome, $USERNAME."
+        sleep 2
+        break
+    done
 }
 
 # Function to play the startup animation
@@ -1102,14 +1129,16 @@ update_animation() {
     local current_progress=0
 
     while ((current_progress < total_steps)); do
-        clear
+        # Clear only the progress bar area to avoid erasing the entire screen
+        tput cup $((bar_start_row - 4)) 0
+        printf "\e[2K" # Clear the line
 
         # Print the title above the loading bar
         tput cup $((bar_start_row - 4)) $(( (term_cols - ${#title}) / 2 ))
         echo -e "\e[1;37m$title\e[0m"
 
         # Print the current step below the loading bar
-        tput cup $step_row $(( (term_cols - 20) / 2 ))
+        tput cup $step_row $(( (term_cols - 30) / 2 ))
         echo -e "\e[1;36mPerforming update step $((current_progress / 10 + 1)) of 10...\e[0m"
 
         # Draw the loading bar
@@ -1121,20 +1150,29 @@ update_animation() {
         tput cup $progress_row $(( (term_cols - 6) / 2 ))
         printf "\e[1;37m%3d%%\e[0m" "$current_progress"
 
-        # Randomize speed every few seconds
-        local speed=$((RANDOM % 10 + 1)) # Random speed between 1 and 10
-        local delay
-        if ((speed <= 2)); then
-            delay=2 # Slowest: 1% every 2 seconds
-        elif ((speed <= 5)); then
-            delay=1 # Medium: 1% every second
-        else
-            delay=0.1 # Fastest: 10% per second
+        # Randomize the next target progress
+        local target_progress=$((current_progress + RANDOM % 5 + 1)) # Random increment between 1 and 5
+        if ((target_progress > total_steps)); then
+            target_progress=$total_steps
         fi
 
+        # Calculate the total time for this increment
+        local speed=$((RANDOM % 10 + 1)) # Random speed between 1 and 10
+        local total_increment_time
+        if ((speed <= 2)); then
+            total_increment_time=2 # Slowest: 1% every 2 seconds
+        elif ((speed <= 5)); then
+            total_increment_time=1 # Medium: 1% every second
+        else
+            total_increment_time=0.1 # Fastest: 10% per second
+        fi
+
+        # Calculate the delay for each step
+        local steps_to_increment=$((target_progress - current_progress))
+        local delay=$(echo "$total_increment_time / $steps_to_increment" | bc -l)
+
         # Increment progress one step at a time
-        local steps_to_increment=$((RANDOM % 5 + 1)) # Random steps between 1 and 5
-        for ((i = 0; i < steps_to_increment && current_progress < total_steps; i++)); do
+        for ((i = 0; i < steps_to_increment; i++)); do
             ((current_progress++))
             sleep "$delay"
             elapsed_time=$(echo "$elapsed_time + $delay" | bc)
