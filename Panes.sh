@@ -581,6 +581,8 @@ check_application_updates() {
                 for ((i=0; i<=mini_total_steps; i++)); do
                     sleep "$mini_step_duration"
                     printf "\r  Progress: ["
+
+                    # --- START OF REUSED PROGRESS BAR LOGIC ---
                     for ((j=0; j<i; j++)); do
                         printf "#"
                     done
@@ -588,6 +590,7 @@ check_application_updates() {
                         printf " "
                     done
                     printf "] %d%%" "$((i * 100 / mini_total_steps))"
+                    # --- END OF REUSED PROGRESS BAR LOGIC ---
                 done
                 printf "\r"
 
@@ -861,6 +864,69 @@ ReInstall() {
     
     # Change directory back up one level and copy the script (adjust the path to your BootFolder)
 #Or upload a version of panes with a downgraded version and replace this one with that.
+}
+
+# Function to update the screen with animation and progress
+update_screen() {
+    clear
+
+    # Paint the screen white, then black
+    printf '\033[47;30m' # White background, black text
+    clear
+    sleep 1
+    printf '\033[40;37m' # Black background, white text
+    clear
+    sleep 1
+
+    # Replay the Panes animation
+    animate_ascii_art
+
+    # Begin the update process
+    clear
+    local term_rows=$(tput lines)
+    local term_cols=$(tput cols)
+
+    # Centered text and loading bar
+    local title="Panes is updating. Please wait and do not exit the script"
+    local bar_width=$((term_cols / 2))
+    local bar_start_col=$(( (term_cols - bar_width) / 2 ))
+    local bar_start_row=$((term_rows / 2))
+    local progress_row=$((bar_start_row + 2))
+    local step_row=$((bar_start_row - 2))
+
+    local total_steps=100
+    local total_duration=45 # Total duration in seconds
+    local step_duration=$(echo "$total_duration / $total_steps" | bc -l)
+
+    for ((i = 0; i <= total_steps; i++)); do
+        clear
+
+        # Print the title
+        tput cup $((bar_start_row - 4)) $(( (term_cols - ${#title}) / 2 ))
+        echo -e "\e[1;37m$title\e[0m"
+
+        # Print the current step
+        tput cup $step_row $(( (term_cols - 20) / 2 ))
+        echo -e "\e[1;36mUpdating step $((i / 10 + 1)) of 10...\e[0m"
+
+        # Draw the loading bar
+        tput cup $bar_start_row $bar_start_col
+        printf "\e[42m%*s\e[0m" $((i * bar_width / total_steps)) ""
+        printf "\e[40m%*s\e[0m" $((bar_width - (i * bar_width / total_steps))) ""
+
+        # Print the progress percentage
+        tput cup $progress_row $(( (term_cols - 6) / 2 ))
+        printf "\e[1;37m%3d%%\e[0m" "$i"
+
+        sleep "$step_duration"
+    done
+
+    # Final message after update
+    clear
+    tput cup $((term_rows / 2)) $(( (term_cols - 30) / 2 ))
+    echo -e "\e[1;32mUpdate complete! Restarting Panes...\e[0m"
+    sleep 3
+    exec bash "$0" # Restart the script
 }
 
 # Initial animations when the script is first run
