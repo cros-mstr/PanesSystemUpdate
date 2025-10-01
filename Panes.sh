@@ -1169,13 +1169,16 @@ update_animation() {
 
         # Calculate the delay for each step
         local steps_to_increment=$((target_progress - current_progress))
-        local delay=$(echo "$total_increment_time / $steps_to_increment" | bc -l)
+        if ((steps_to_increment <= 0)); then
+            steps_to_increment=1 # Ensure at least one step
+        fi
+        local delay=$(awk "BEGIN {print $total_increment_time / $steps_to_increment}")
 
         # Increment progress one step at a time
         for ((i = 0; i < steps_to_increment; i++)); do
             ((current_progress++))
             sleep "$delay"
-            elapsed_time=$(echo "$elapsed_time + $delay" | bc)
+            elapsed_time=$(awk "BEGIN {print $elapsed_time + $delay}")
         done
 
         # Ensure the total duration is approximately 35 seconds
