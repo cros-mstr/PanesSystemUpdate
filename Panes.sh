@@ -25,7 +25,7 @@ UPDATE_DESC="Panes 3.0 Space lets you enjoy a grand new out-of-box experience an
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=2.1
+VERSION=3.0
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
@@ -1195,6 +1195,119 @@ update_animation() {
     # Reset terminal colors to default
     printf '\033[0m'
 }
+# Function to draw a window
+draw_window() {
+    local title="$1"
+    local content="$2"
+    local window_width=$(( $(tput cols) / 2 ))
+    local window_height=$(( $(tput lines) / 2 ))
+    local start_row=$(( ($(tput lines) - window_height) / 2 ))
+    local start_col=$(( ($(tput cols) - window_width) / 2 ))
+
+    # Draw the window border
+    tput cup $start_row $start_col
+    printf "\e[47;30m" # Gray background, black text
+    printf "╭%s╮" "$(printf '─%.0s' $(seq 1 $((window_width - 2))))"
+    for ((i = 1; i < window_height - 1; i++)); do
+        tput cup $((start_row + i)) $start_col
+        printf "│%*s│" $((window_width - 2)) ""
+    done
+    tput cup $((start_row + window_height - 1)) $start_col
+    printf "╰%s╯" "$(printf '─%.0s' $(seq 1 $((window_width - 2))))"
+
+    # Draw the title
+    tput cup $start_row $((start_col + 2))
+    printf "\e[1;37m%s\e[0m" "$title"
+
+    # Draw the content
+    local content_start_row=$((start_row + 2))
+    local content_start_col=$((start_col + 2))
+    tput cup $content_start_row $content_start_col
+    printf "\e[0m%s" "$content"
+}
+
+# Function to clear the window
+clear_window() {
+    local window_width=$(( $(tput cols) / 2 ))
+    local window_height=$(( $(tput lines) / 2 ))
+    local start_row=$(( ($(tput lines) - window_height) / 2 ))
+    local start_col=$(( ($(tput cols) - window_width) / 2 ))
+
+    for ((i = 0; i < window_height; i++)); do
+        tput cup $((start_row + i)) $start_col
+        printf "%*s" $window_width ""
+    done
+}
+# Function to display quit confirmatione the command line
+quit_confirmation() {line() {
+    local term_rows=$(tput lines)
+    local term_cols=$(tput cols)ut lines) 0
+    local box_width=40        printf "\e[44;37mCommand: \e[0m"
+    local box_height=10
+    local start_row=$(( (term_rows - box_height) / 2 ))
+    local start_col=$(( (term_cols - box_width) / 2 ))
+
+    # Draw the confirmation box          clear_window
+    tput cup $start_row $start_col                draw_window "Maximized Window" "The window is now maximized."
+    printf "\e[47;30m" # Gray background, black text
+    printf "╭%s╮" "$(printf '─%.0s' $(seq 1 $((box_width - 2))))"   shade)
+    for ((i = 1; i < box_height - 1; i++)); do                clear_window
+        tput cup $((start_row + i)) $start_col"Shaded Window" "The window is now shaded."
+        printf "│%*s│" $((box_width - 2)) ""
+    done
+    tput cup $((start_row + box_height - 1)) $start_col
+    printf "╰%s╯" "$(printf '─%.0s' $(seq 1 $((box_width - 2))))"                echo "The window is minimized. Press Ctrl+W to return."
+
+    # Draw the message
+    tput cup $((start_row + 2)) $((start_col + 2))
+    printf "\e[1;37mThis will end your current Panes session.\e[0m"
+    tput cup $((start_row + 3)) $((start_col + 2))
+    printf "\e[1;37mAre you sure you want to continue?\e[0m"
+INSTALLED_APPS_GLOBAL[@]})); then
+    # Draw the buttonslocal selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"
+    tput cup $((start_row + 6)) $((start_col + 4))
+    printf "\e[1;30;47m Continue Session \e[0m"nch_application "$selected_app"
+    tput cup $((start_row + 6)) $((start_col + 24))  else
+    printf "\e[1;30;47m Exit Session \e[0m"echo "Error: Application not found."
+      fi
+    # Handle user input      else
+    local selected=0                    echo "Invalid application number."
+    while true; do
+        case $selected in
+            0)
+                tput cup $((start_row + 6)) $((start_col + 4))
+                printf "\e[1;30;47m> Continue Session \e[0m"
+                tput cup $((start_row + 6)) $((start_col + 24))
+                printf "\e[1;30;47m  Exit Session \e[0m"
+                ;;
+            1)
+                tput cup $((start_row + 6)) $((start_col + 4))
+                printf "\e[1;30;47m  Continue Session \e[0m" startup animation
+                tput cup $((start_row + 6)) $((start_col + 24))
+                printf "\e[1;30;47m> Exit Session \e[0m"
+                ;; UserData file exists
+        esac UserData ]]; then
+
+        read -rsn1 key
+        case $key in
+            $'\e[C') # Right arrow
+                selected=$(( (selected + 1) % 2 ))
+                ;;
+            $'\e[D') # Left arrow
+                selected=$(( (selected + 1) % 2 ))he desktop
+                ;;; do
+            "") # Enter key
+                if ((selected == 0)); thener your choice: " menu_option < /dev/tty
+                    clear
+                    returnk if the input corresponds to an installed application
+                else[0-9]+$ ]]; then
+                    clearapp_index=$((menu_option - 10))
+                    exit 0 ((app_index >= 0 && app_index < ${#INSTALLED_APPS_GLOBAL[@]})); then
+                fi
+                ;;
+        esac
+    done
+}
 # Main script logic
 main() {
     # Play the startup animation
@@ -1212,55 +1325,27 @@ main() {
     # Proceed to the desktop
     while true; do
         draw_desktop
-        read -r -p "Enter your choice: " menu_option < /dev/tty
-
-        # Check if the input corresponds to an installed application
-        if [[ "$menu_option" =~ ^[0-9]+$ ]]; then
-            local app_index=$((menu_option - 10))
-            if ((app_index >= 0 && app_index < ${#INSTALLED_APPS_GLOBAL[@]})); then
-                local selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"
-                if [[ -f "$selected_app" ]]; then
-                    launch_application "$selected_app"
-                else
-                    echo "Error: Application not found."
-                    sleep 2
-                fi
-                continue
-            fi
+        read -rsn1 key
+        if [[ "$key" == $'\x17' ]]; then # Ctrl+W
+            command_line
         fi
+    done
+}
 
-        # Handle other menu options
-        case $menu_option in
-            1)
-                echo "Launching Text Editor..."
-                sleep 1
-                ;;
-            2)
-                echo "Launching Calculator..."
-                sleep 1
-                ;;
-            3)
-                echo "Launching File Viewer..."
-                sleep 1
-                ;;
-            4)
-                echo "Launching Guess Game..."
-                sleep 1
-                ;;
-            5)
-                echo "Opening App Store..."
-                sleep 1
-                app_store
-                ;;
-            6)
-                echo "Running Animation..."
-                sleep 1
-                ;;
-            7)
-                check_for_updates
-                ;;
-            8)
-                echo "Reinstalling Panes..."
+
+
+
+
+
+
+
+
+
+
+
+
+
+            8)                ;;                check_for_updates            7)                ;;                sleep 1                echo "Running Animation..."            6)                ;;                app_store                sleep 1                echo "Opening App Store..."            5)                ;;                sleep 1                echo "Launching Guess Game..."            4)                ;;                sleep 1                echo "Launching File Viewer..."            3)                ;;                sleep 1                echo "Launching Calculator..."            2)                ;;                sleep 1                echo "Launching Text Editor..."            1)        case $menu_option in        # Handle other menu options        fi            fi                continue                fi                    sleep 2                    echo "Error: Application not found."                else                    launch_application "$selected_app"                if [[ -f "$selected_app" ]]; then                local selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"                echo "Reinstalling Panes..."
                 sleep 1
                 ;;
             9)
