@@ -539,7 +539,7 @@ check_application_updates() {
         fi
 
         remote_app_version=$(grep '^VERSION=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
-        temp_title=$(grep '^UPDATE_TITLE=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
+        temp_title=$(grep '^UPDATE_TITLE
         temp_desc=$(grep '^UPDATE_DESC=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
 
         if [ -n "$temp_title" ]; then
@@ -1238,40 +1238,40 @@ clear_window() {
         printf "%*s" $window_width ""
     done
 }
-# Function to display quit confirmatione the command line
-quit_confirmation() {line() {
+# Function to display quit confirmation
+quit_confirmation() {
     local term_rows=$(tput lines)
-    local term_cols=$(tput cols)ut lines) 0
-    local box_width=40        printf "\e[44;37mCommand: \e[0m"
+    local term_cols=$(tput cols)
+    local box_width=40
     local box_height=10
     local start_row=$(( (term_rows - box_height) / 2 ))
     local start_col=$(( (term_cols - box_width) / 2 ))
 
-    # Draw the confirmation box          clear_window
-    tput cup $start_row $start_col                draw_window "Maximized Window" "The window is now maximized."
+    # Draw the confirmation box
+    tput cup $start_row $start_col
     printf "\e[47;30m" # Gray background, black text
-    printf "╭%s╮" "$(printf '─%.0s' $(seq 1 $((box_width - 2))))"   shade)
-    for ((i = 1; i < box_height - 1; i++)); do                clear_window
-        tput cup $((start_row + i)) $start_col"Shaded Window" "The window is now shaded."
+    printf "╭%s╮" "$(printf '─%.0s' $(seq 1 $((box_width - 2))))"
+    for ((i = 1; i < box_height - 1; i++)); do
+        tput cup $((start_row + i)) $start_col
         printf "│%*s│" $((box_width - 2)) ""
     done
     tput cup $((start_row + box_height - 1)) $start_col
-    printf "╰%s╯" "$(printf '─%.0s' $(seq 1 $((box_width - 2))))"                echo "The window is minimized. Press Ctrl+W to return."
+    printf "╰%s╯" "$(printf '─%.0s' $(seq 1 $((box_width - 2))))"
 
     # Draw the message
     tput cup $((start_row + 2)) $((start_col + 2))
     printf "\e[1;37mThis will end your current Panes session.\e[0m"
     tput cup $((start_row + 3)) $((start_col + 2))
     printf "\e[1;37mAre you sure you want to continue?\e[0m"
-INSTALLED_APPS_GLOBAL[@]})); then
-    # Draw the buttonslocal selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"
+
+    # Draw the buttons
     tput cup $((start_row + 6)) $((start_col + 4))
-    printf "\e[1;30;47m Continue Session \e[0m"nch_application "$selected_app"
-    tput cup $((start_row + 6)) $((start_col + 24))  else
-    printf "\e[1;30;47m Exit Session \e[0m"echo "Error: Application not found."
-      fi
-    # Handle user input      else
-    local selected=0                    echo "Invalid application number."
+    printf "\e[1;30;47m Continue Session \e[0m"
+    tput cup $((start_row + 6)) $((start_col + 24))
+    printf "\e[1;30;47m Exit Session \e[0m"
+
+    # Handle user input
+    local selected=0
     while true; do
         case $selected in
             0)
@@ -1282,11 +1282,11 @@ INSTALLED_APPS_GLOBAL[@]})); then
                 ;;
             1)
                 tput cup $((start_row + 6)) $((start_col + 4))
-                printf "\e[1;30;47m  Continue Session \e[0m" startup animation
+                printf "\e[1;30;47m  Continue Session \e[0m"
                 tput cup $((start_row + 6)) $((start_col + 24))
                 printf "\e[1;30;47m> Exit Session \e[0m"
-                ;; UserData file exists
-        esac UserData ]]; then
+                ;;
+        esac
 
         read -rsn1 key
         case $key in
@@ -1294,15 +1294,15 @@ INSTALLED_APPS_GLOBAL[@]})); then
                 selected=$(( (selected + 1) % 2 ))
                 ;;
             $'\e[D') # Left arrow
-                selected=$(( (selected + 1) % 2 ))he desktop
-                ;;; do
+                selected=$(( (selected + 1) % 2 ))
+                ;;
             "") # Enter key
-                if ((selected == 0)); thener your choice: " menu_option < /dev/tty
+                if ((selected == 0)); then
                     clear
-                    returnk if the input corresponds to an installed application
-                else[0-9]+$ ]]; then
-                    clearapp_index=$((menu_option - 10))
-                    exit 0 ((app_index >= 0 && app_index < ${#INSTALLED_APPS_GLOBAL[@]})); then
+                    return
+                else
+                    clear
+                    exit 0
                 fi
                 ;;
         esac
