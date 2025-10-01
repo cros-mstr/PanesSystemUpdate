@@ -995,7 +995,6 @@ run_oobe() {
             return
         fi
     else
-    else
         password=""
     fi
 
