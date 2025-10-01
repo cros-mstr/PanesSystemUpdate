@@ -18,8 +18,8 @@ printf '\033]11;#0F9096\007'
 #21  Refresh
 #22 Snapper
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes 3.0 "Space" "
-UPDATE_DESC="Panes 3.0 Space lets you enjoy a grand new out-of-box experience and username and password login! Update Now for the latest in the greatest Panes experience."
+UPDATE_TITLE="Panes 2.1 "Refresh" "
+UPDATE_DESC="Panes 2.1 Refresh is the latest and greatest version of Panes. It includes a new application store, a revamped user interface, and many bug fixes and performance improvements. Enjoy!"
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
