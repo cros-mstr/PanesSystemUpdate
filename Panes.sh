@@ -570,7 +570,7 @@ check_application_updates() {
             # --- START OF REUSED CONFIRMATION LOGIC FROM PANES.SH UPDATE ---
             local confirm_app_update
             # Explicitly read from /dev/tty to bypass any stdin redirection from the `while read` loop
-            read -r -p "  A new version ($remote_app_version) is available. Proceed with update? (y/n): " confirm_app_update < /dev/tty
+            read -r -p "  A new version \($remote_app_version\) is available. Proceed with update? (y/n): " confirm_app_update < /dev/tty
             
             if [[ "$confirm_app_update" == "y" || "$confirm_app_update" == "Y" ]]; then
                 echo "  Proceeding with $app_filename update..."
