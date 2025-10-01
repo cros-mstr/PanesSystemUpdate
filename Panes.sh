@@ -1103,8 +1103,8 @@ animate_ascii_art() {
 
 # Function to display the update animation with a progress bar
 update_animation() {
-    clear
-    printf '\033[40;37m' # Black background, white text
+    # Set the terminal background color to blue
+    printf '\033[44;37m' # Blue background, white text
     clear
 
     # Play the Panes startup animation
@@ -1143,7 +1143,7 @@ update_animation() {
         # Draw the loading bar
         tput cup $bar_start_row $bar_start_col
         printf "\e[42m%*s\e[0m" $((current_progress * bar_width / total_steps)) ""
-        printf "\e[40m%*s\e[0m" $((bar_width - (current_progress * bar_width / total_steps))) ""
+        printf "\e[44m%*s\e[0m" $((bar_width - (current_progress * bar_width / total_steps))) ""
 
         # Print the progress percentage below the bar
         tput cup $progress_row $(( (term_cols - 6) / 2 ))
@@ -1191,8 +1191,10 @@ update_animation() {
     tput cup $((term_rows / 2)) $(( (term_cols - 30) / 2 ))
     echo -e "\e[1;32mUpdate complete! Restarting Panes...\e[0m"
     sleep 3
-}
 
+    # Reset terminal colors to default
+    printf '\033[0m'
+}
 # Main script logic
 main() {
     # Play the startup animation
