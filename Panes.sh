@@ -1180,8 +1180,8 @@ update_animation() {
             elapsed_time=$(awk "BEGIN {print $elapsed_time + $delay}")
         done
 
-        # Ensure the total duration is approximately 35 seconds.
-        if ((elapsed_time >= total_duration)); then
+        # Ensure the total duration is approximately 35 seconds
+        if (( $(awk "BEGIN {print ($elapsed_time >= $total_duration)}") )); then
             current_progress=$total_steps
         fi
     done
