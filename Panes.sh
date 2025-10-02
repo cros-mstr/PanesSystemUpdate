@@ -1325,35 +1325,47 @@ main() {
     # Proceed to the desktop
     while true; do
         draw_desktop
-        read -rsn1 key
-        if [[ "$key" == $'\x17' ]]; then # Ctrl+W
-            command_line
-        fi
-    done
-}
+        read -r -p "Enter your choice: " menu_option < /dev/tty
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-            8\)                ;;                check_for_updates            7\)                ;;                sleep 1                echo "Running Animation..."            6\)                ;;                app_store                sleep 1                echo "Opening App Store..."            5\)                ;;                sleep 1                echo "Launching Guess Game..."            4\)                ;;                sleep 1                echo "Launching File Viewer..."            3\)                ;;                sleep 1                echo "Launching Calculator..."            2\)                ;;                sleep 1                echo "Launching Text Editor..."            1\)        case $menu_option in        # Handle other menu options        fi            fi                continue                fi                    sleep 2                    echo "Error: Application not found."                else                    launch_application "$selected_app"                if [[ -f "$selected_app" ]]; then                local selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"                echo "Reinstalling Panes..."
+        case $menu_option in
+            1)
+                echo "Launching Text Editor..."
                 sleep 1
                 ;;
-            9\)
+            2)
+                echo "Launching Calculator..."
+                sleep 1
+                ;;
+            3)
+                echo "Launching File Viewer..."
+                sleep 1
+                ;;
+            4)
+                echo "Launching Guess Game..."
+                sleep 1
+                ;;
+            5)
+                echo "Opening App Store..."
+                sleep 1
+                app_store
+                ;;
+            6)
+                echo "Running Animation..."
+                sleep 1
+                ;;
+            7)
+                check_for_updates
+                ;;
+            8)
+                echo "Reinstalling Panes..."
+                sleep 1
+                ;;
+            9)
                 echo "Exiting Panes. Goodbye!"
                 sleep 1
                 exit 0
                 ;;
-            *\)
+            *)
                 echo "Invalid option. Please choose a valid number."
                 sleep 1
                 ;;
