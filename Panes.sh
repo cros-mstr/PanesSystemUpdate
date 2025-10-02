@@ -83,6 +83,65 @@ launch_application() {
     read -r < /dev/tty
 }
 
+# Function to handle the Out-Of-Box Experience (OOBE)
+run_oobe() {
+    clear
+    echo "==================================="
+    echo "| Welcome to Panes - Initial Setup |"
+    echo "==================================="
+    echo
+
+    # Prompt for username
+    read -r -p "Enter your username: " username
+    while [[ -z "$username" ]]; do
+        echo "Username cannot be empty. Please try again."
+        read -r -p "Enter your username: " username
+    done
+
+    # Prompt for language
+    echo "Select your language:"
+    echo "1) English"
+    echo "2) Spanish"
+    echo "3) French"
+    echo "4) German"
+    echo "5) Other"
+    read -r -p "Enter the number corresponding to your language: " language_option
+    case $language_option in
+        1) language="English" ;;
+        2) language="Spanish" ;;
+        3) language="French" ;;
+        4) language="German" ;;
+        5) read -r -p "Enter your language: " language ;;
+        *) echo "Invalid option. Defaulting to English."; language="English" ;;
+    esac
+
+    # Prompt for password
+    read -r -p "Would you like to set a password? (y/n): " set_password
+    if [[ "$set_password" =~ ^[Yy]$ ]]; then
+        read -r -s -p "Enter your password: " password
+        echo
+        read -r -s -p "Confirm your password: " password_confirm
+        echo
+        if [[ "$password" != "$password_confirm" ]]; then
+            echo "Passwords do not match. Please try again."
+            run_oobe
+            return
+        fi
+    else
+        password=""
+    fi
+
+    # Save user data to UserData file
+    echo "USERNAME=$username" > UserData
+    echo "LANGUAGE=$language" >> UserData
+    if [[ -n "$password" ]]; then
+        echo "PASSWORD=$(echo "$password" | sha256sum | awk '{print $1}')" >> UserData
+    fi
+
+    echo "Setup complete! Your information has been saved."
+    sleep 2
+}
+
 # Main script logic
 main() {
     # Play the startup animation
