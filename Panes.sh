@@ -1345,15 +1345,15 @@ main() {
 
 
 
-            8)                ;;                check_for_updates            7)                ;;                sleep 1                echo "Running Animation..."            6)                ;;                app_store                sleep 1                echo "Opening App Store..."            5)                ;;                sleep 1                echo "Launching Guess Game..."            4)                ;;                sleep 1                echo "Launching File Viewer..."            3)                ;;                sleep 1                echo "Launching Calculator..."            2)                ;;                sleep 1                echo "Launching Text Editor..."            1)        case $menu_option in        # Handle other menu options        fi            fi                continue                fi                    sleep 2                    echo "Error: Application not found."                else                    launch_application "$selected_app"                if [[ -f "$selected_app" ]]; then                local selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"                echo "Reinstalling Panes..."
+            8\)                ;;                check_for_updates            7\)                ;;                sleep 1                echo "Running Animation..."            6\)                ;;                app_store                sleep 1                echo "Opening App Store..."            5\)                ;;                sleep 1                echo "Launching Guess Game..."            4\)                ;;                sleep 1                echo "Launching File Viewer..."            3\)                ;;                sleep 1                echo "Launching Calculator..."            2\)                ;;                sleep 1                echo "Launching Text Editor..."            1\)        case $menu_option in        # Handle other menu options        fi            fi                continue                fi                    sleep 2                    echo "Error: Application not found."                else                    launch_application "$selected_app"                if [[ -f "$selected_app" ]]; then                local selected_app="./Applications/${INSTALLED_APPS_GLOBAL[app_index]}"                echo "Reinstalling Panes..."
                 sleep 1
                 ;;
-            9)
+            9\)
                 echo "Exiting Panes. Goodbye!"
                 sleep 1
                 exit 0
                 ;;
-            *)
+            *\)
                 echo "Invalid option. Please choose a valid number."
                 sleep 1
                 ;;
