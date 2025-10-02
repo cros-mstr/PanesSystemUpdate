@@ -539,7 +539,7 @@ check_application_updates() {
         fi
 
         remote_app_version=$(grep '^VERSION=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
-        temp_title=$(grep '^UPDATE_TITLE
+        temp_title=$(grep '^UPDATE_TITLE' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
         temp_desc=$(grep '^UPDATE_DESC=' "$temp_remote_file" | cut -d'=' -f2 | tr -d '"')
 
         if [ -n "$temp_title" ]; then
@@ -570,7 +570,7 @@ check_application_updates() {
             # --- START OF REUSED CONFIRMATION LOGIC FROM PANES.SH UPDATE ---
             local confirm_app_update
             # Explicitly read from /dev/tty to bypass any stdin redirection from the `while read` loop
-            read -r -p "  A new version \($remote_app_version\) is available. Proceed with update? y/n: " confirm_app_update < /dev/tty
+            read -r -p "A new version \($remote_app_version\) is available. Proceed with update? (y/n): " confirm_app_update < /dev/tty
             
             if [[ "$confirm_app_update" == "y" || "$confirm_app_update" == "Y" ]]; then
                 echo "  Proceeding with $app_filename update..."
@@ -682,7 +682,7 @@ dev_update() {
     rm -f "$temp_env_updater_file" 2>/dev/null
 
     if [ "$env_updater_exit_code" -ne 0 ]; then
-        echo "EnvironmentUpdater.sh completed with errors (Exit Code: $env_updater_exit_code). Update may be incomplete."
+        echo "EnvironmentUpdater.sh completed with errors \(Exit Code: $env_updater_exit_code\). Update may be incomplete."
         echo "Press [Enter] to continue or to return to the main menu."
         read -r < /dev/tty
         return
