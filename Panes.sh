@@ -1327,9 +1327,9 @@ main() {
     echo "Wi-Fi Module Found: [OK]" #TODO: Wi-Fi check
     sleep 0.5
     echo "Booting Panes System..."
-    wait(0.25)
+    sleep 0.25
     echo "Proceeding with system boot..."
-    wait(0.25)
+    sleep 0.25
 
     # Play the startup animation
     animate_ascii_art
