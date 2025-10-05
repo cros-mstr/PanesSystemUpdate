@@ -2,8 +2,10 @@
 cd "$(dirname "$0")"
 
 # Set terminal background color to #00EEFF
+# Teal: 0F9096
 #Changed to for readability and less strain
-printf '\033]11;#0F9096\007'
+printf '\033]11;#0000FF\007'
+## IF you'd like to change your color, use this format: RRGGBB where F = MAX 255 and 0 = MIN 0.  example: RED = FF000000 GRN = 00FF00 BLU = 0000FF
 
 #todo Add an installer app to RepoAvailableApps
 #Add a Classic mode that is the old panes with no app store
@@ -17,15 +19,18 @@ printf '\033]11;#0F9096\007'
 #20 Swapper
 #21  Refresh
 #22 Snapper
+#30 Space (Lynx!)
+#31 Spaaaaace!!!
+#32 Rooms (Separates apps and more into their own subscripts and folders, will update with system.)
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes 3.0 "Space" "
-UPDATE_DESC="Panes 3.0 Space lets you enjoy a grand new out-of-box experience and username and password login! Update Now for the latest in the greatest Panes experience."
+UPDATE_TITLE="Panes 3.1 "Space" "
+UPDATE_DESC="Panes 3.1 Space lets you enjoy a grand new out-of-box experience and username and password login! Update Now for the latest in the greatest Panes experience."
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=3.0
+VERSION=3.1
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
