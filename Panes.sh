@@ -237,7 +237,7 @@ shooting_star() {
 }
 
 # Initial Boot Animation
-shooting_star
+
 animate_ascii_art() {
     local letters=("P" "A" "N" "E" "S")
     local patterns=(
@@ -1331,7 +1331,7 @@ main() {
     sleep 0.25
     echo "Proceeding with system boot..."
     sleep 0.25
-
+shooting_star
     # Play the startup animation
     animate_ascii_art
 
