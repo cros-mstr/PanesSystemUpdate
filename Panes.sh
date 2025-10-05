@@ -1316,6 +1316,7 @@ quit_confirmation() {
 # Main script logic
 main() {
     #Pre-Boot (10-4-25 NEW!)
+    clear
     echo -e "\e[91mC\e[93mo\e[92ml\e[94mo\e[95mr\e[0m Video Terminal Found at Port Socket 0"
     sleep 0.15
     echo "Panes System Located"
