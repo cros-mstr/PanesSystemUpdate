@@ -1315,6 +1315,22 @@ quit_confirmation() {
 }
 # Main script logic
 main() {
+    #Pre-Boot (10-4-25 NEW!)
+    echo -e "\e[91mC\e[93mo\e[92ml\e[94mo\e[95mr\e[0m Video Terminal Found at Port Socket 0"
+    sleep 0.15
+    echo "Panes System Located"
+    sleep 0.015
+    echo "Did you remember to run as SUDO? If not, upgrading and app store will be disabled." # TODO: sudo check instead of reminder
+    sleep 2
+    echo "Firmware Version 1.0.0"
+    sleep 0.5
+    echo "Wi-Fi Module Found: [OK]" #TODO: Wi-Fi check
+    sleep 0.5
+    echo "Booting Panes System..."
+    wait(0.25)
+    echo "Proceeding with system boot..."
+    wait(0.25)
+
     # Play the startup animation
     animate_ascii_art
 
