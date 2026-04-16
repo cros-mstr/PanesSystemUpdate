@@ -21,16 +21,18 @@ printf '\033]11;#0000FF\007'
 #22 Snapper
 #30 Space (Lynx!)
 #31 Spaaaaace!!!
-#32 Rooms (Separates apps and more into their own subscripts and folders, will update with system.)
+#32 MaineCoon
+#33 Rooms (Separates apps and more into their own subscripts and folders, will update with system.)
 #Coming Soon in Beta: Installer
-UPDATE_TITLE="Panes 3.1 "Space" "
-UPDATE_DESC="Panes 3.1 Space lets you enjoy a grand new out-of-box experience and username and password login! Update Now for the latest in the greatest Panes experience."
+#PATCH = Programs and Apps TSS CheckHash
+UPDATE_TITLE="Panes 3.2 "Maine Coone" "
+UPDATE_DESC="Maine Coon patches a fix for the Aurora Program Center. Developers! PATCH Verification will be taking place soon. Stay Tuned!"
 #PanesDR Coming Soon
 #Bugs, bugs, BUGS!!!
 PARENT_DIR=$(dirname "$(pwd)")
 INSTALLED_DIR="$PARENT_DIR/Installed"
 
-VERSION=3.1
+VERSION=3.2
 # Duration for initial animation in seconds
 TOTAL_ANIMATION_DURATION=1/12
 SPINNER_DELAY=0.25
@@ -92,37 +94,31 @@ draw_desktop() {
 
     # Calculate space for installed apps
     local app_dir="./Applications"
-    local app_counter=10
-    local temp_app_list="/tmp/panes_installed_apps_$$_$(date +%s).txt"
-    INSTALLED_APPS_GLOBAL=()
+    INSTALLED_APPS_GLOBAL=() # Reset the global array
 
     # Collect installed apps
     if [ -d "$app_dir" ]; then
-        find "$app_dir" -maxdepth 1 -type f -name "*.sh" | sort > "$temp_app_list"
-        while IFS= read -r app_path; do
-            local app_filename=$(basename "$app_path")
-            local app_display_name="${app_filename%.sh}"
-            INSTALLED_APPS_GLOBAL+=("$app_filename")
-        done < "$temp_app_list"
+        # Use a temporary array to store found files
+        while IFS= read -r -d '' file; do
+            INSTALLED_APPS_GLOBAL+=("$(basename "$file")")
+        done < <(find "$app_dir" -maxdepth 1 -type f -name "*.sh" -print0 | sort -z)
     fi
-    rm -f "$temp_app_list"
 
     # Calculate how many lines are needed for installed apps
-    local app_lines=${#INSTALLED_APPS_GLOBAL[@]}
-    local content_height=$((term_rows - 4)) # 1 for top, 2 for menu, 1 for spacing
+    local app_count=${#INSTALLED_APPS_GLOBAL[@]}
+    local content_height=$((term_rows - 6)) # Adjusted for menu and spacing
 
-    # Print installed apps, filling vertical space
+    # Print installed apps
     local i=0
-    while ((i < app_lines && i < content_height)); do
+    for ((i=0; i < app_count && i < content_height; i++)); do
         local app_filename="${INSTALLED_APPS_GLOBAL[i]}"
         local app_display_name="${app_filename%.sh}"
         printf "\e[1;35m  [%d] %s\e[0m\n" "$((10+i))" "$app_display_name"
-        ((i++))
     done
+
     # Fill remaining space with blank lines
-    while ((i < content_height)); do
+    for ((j=i; j < content_height; j++)); do
         echo
-        ((i++))
     done
 
     # Prepare horizontal menu for the bottom
@@ -1345,54 +1341,39 @@ shooting_star
     login
 
     # Proceed to the desktop
-    while true; do
-        draw_desktop
-        read -r -p "Enter your choice: " menu_option < /dev/tty
+   # ===================================================================
+# Main execution starts here
+# ===================================================================
 
-        case $menu_option in
-            1)
-                echo "Launching Text Editor..."
+# (Boot animations/checks would go here)
+
+while true; do
+    draw_desktop
+    read -r -p "Enter selection: " main_choice < /dev/tty
+
+    case $main_choice in
+        1) # Internal App 1 (Example)
+           ;;
+        5) app_store ;;
+        7) check_for_updates ;;
+        9) exit 0 ;;
+        
+        # This handles all numbers 10 and above (The App Store Apps)
+        [1-9][0-9]*) 
+            app_idx=$((main_choice - 10))
+            if [[ -n "${INSTALLED_APPS_GLOBAL[$app_idx]}" ]]; then
+                app_menu "${INSTALLED_APPS_GLOBAL[$app_idx]}"
+            else
+                echo "Invalid app selection."
                 sleep 1
-                ;;
-            2)
-                echo "Launching Calculator..."
-                sleep 1
-                ;;
-            3)
-                echo "Launching File Viewer..."
-                sleep 1
-                ;;
-            4)
-                echo "Launching Guess Game..."
-                sleep 1
-                ;;
-            5)
-                echo "Opening App Store..."
-                sleep 1
-                app_store
-                ;;
-            6)
-                echo "Running Animation..."
-                sleep 1
-                ;;
-            7)
-                check_for_updates
-                ;;
-            8)
-                echo "Reinstalling Panes..."
-                sleep 1
-                ;;
-            9)
-                echo "Exiting Panes. Goodbye!"
-                sleep 1
-                exit 0
-                ;;
-            *)
-                echo "Invalid option. Please choose a valid number."
-                sleep 1
-                ;;
-        esac
-    done
+            fi
+            ;;
+        *)
+            echo "Invalid option."
+            sleep 1
+            ;;
+    esac
+done
 }
 
 # Start the script
