@@ -79,6 +79,41 @@ else
 fi
 }
 
+# Function to simulate a CRT screen collapse
+crt_exit() {
+    local rows=$(tput lines)
+    local cols=$(tput cols)
+    local middle=$((rows / 2))
+    
+    # Set color to white background for the "flash" effect
+    printf "\e[47m" 
+
+    for ((i=0; i<=middle; i++)); do
+        # Calculate top and bottom rows to fill
+        local top_row=$i
+        local bottom_row=$((rows - i))
+        
+        # Draw white bars from top and bottom
+        tput cup "$top_row" 0
+        printf "%${cols}s" " "
+        tput cup "$bottom_row" 0
+        printf "%${cols}s" " "
+        
+        # Short delay to simulate the scanline speed
+        sleep 0.02
+    done
+
+    # Final horizontal line "pop" in the center
+    tput cup "$middle" 0
+    printf "\e[1;37m%${cols}s" " "
+    sleep 0.1
+    
+    # Reset formatting and clear
+    tput sgr0
+    clear
+    exit 0
+}
+
 # Function to draw the desktop
 draw_desktop() {
     clear
@@ -1356,7 +1391,9 @@ while true; do
            ;;
         5) app_store ;;
         7) check_for_updates ;;
-        9) exit 0 ;;
+        9) echo "END SESSION"
+        echo "Goodbye!"
+        crt_exit 0 ;;
         
         # This handles all numbers 10 and above (The App Store Apps)
         [1-9][0-9]*) 
