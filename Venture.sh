@@ -1,5 +1,9 @@
 #!/bin/bash
-
+PANESType=StatefulApplicationThirdPartySource
+PANESSource=ThirdParty
+UPDATE_TITLE="pub Venture"
+UPDATE_DESC="FPubli Venture"
+VERSION=1
 # Configuration
 WIDTH=40
 HEIGHT=20
