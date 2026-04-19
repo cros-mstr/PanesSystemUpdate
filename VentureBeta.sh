@@ -3,15 +3,12 @@ echo "This is a Brave Educational Test App!"
 echo "Expect bugs! To update, uninstall then re-install!"
 
 # --- Screen Setup ---
-# Use the full terminal dimensions
 WIDTH=$(tput cols)
 HEIGHT=$(tput lines)
-# Leave room for the UI at the bottom
-GAME_HEIGHT=$((HEIGHT - 4))
+GAME_HEIGHT=$((HEIGHT - 8)) # More room for UI
 PLAYER_X=10
-PLAYER_Y=$((GAME_HEIGHT / 2))
+PLAYER_Y=5
 SCORE=0
-OFFSET=0
 
 # Assets
 PLAYER_CHAR="◈"
@@ -20,53 +17,59 @@ SCAN1="\e[48;5;232m"
 SCAN2="\e[48;5;233m"
 RESET="\e[0m"
 
-# Audio logic (macOS built-in)
+# Audio logic for macOS
 play_sound() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # Plays a subtle system beep on macOS in the background
-        (afplay /System/Library/Sounds/Tink.aiff &) >/dev/null 2>&1
+        local rate=$(echo "1.0 + ($SCORE * 0.1)" | bc)
+        (afplay /System/Library/Sounds/Tink.aiff -r "$rate" &) >/dev/null 2>&1
     else
-        # Standard terminal bell for Linux
         printf '\a'
     fi
 }
 
-# Clean up
 trap 'tput cnorm; clear; exit' INT TERM
 tput civis
 clear
 
-# --- Procedural Generation ---
-# Pre-generate a very long level to save CPU
+# --- Level Generation ---
 declare -a TERRAIN
-for ((i=0; i<(WIDTH + 500); i++)); do
-    # Create undulating terrain using awk (more portable than bc for some)
-    TERRAIN[$i]=$(awk -v x="$i" -v h="$GAME_HEIGHT" 'BEGIN {print int((h-5) - (4 * cos(x/8)))}')
+for ((i=0; i<(WIDTH + 1000); i++)); do
+    # Using awk for smoother hills
+    TERRAIN[$i]=$(awk -v x="$i" -v h="$GAME_HEIGHT" 'BEGIN {print int((h-5) - (4 * sin(x/10)))}')
 done
 
+# --- Collision Engine ---
+# Returns 0 (true) if the position is "Air", 1 (false) if it is "Solid"
+is_walkable() {
+    local target_x=$1
+    local target_y=$2
+    local ground_at_x=${TERRAIN[$target_x]}
+    
+    # If target Y is less than ground Y, it's air.
+    if (( target_y < ground_at_x )); then
+        return 0 
+    fi
+    return 1
+}
+
 draw_frame() {
-    # Move cursor to top-left (no flickering)
     tput cup 0 0
     local buffer=""
-    
-    # Calculate viewport based on player position
     local VIEWPORT_X=$((PLAYER_X - WIDTH / 2))
     (( VIEWPORT_X < 0 )) && VIEWPORT_X=0
 
     for ((y=0; y<GAME_HEIGHT; y++)); do
-        # Skinny Scanlines (Alternating dark rows)
         (( y % 2 == 0 )) && buffer+="$SCAN1" || buffer+="$SCAN2"
-        
         for ((x=0; x<WIDTH; x++)); do
             local world_x=$((VIEWPORT_X + x))
             local ground_y=${TERRAIN[$world_x]}
             
             if [[ $world_x -eq $PLAYER_X && $y -eq $PLAYER_Y ]]; then
-                buffer+="\e[38;5;82m$PLAYER_CHAR" # Neon Green Player
+                buffer+="\e[38;5;82m$PLAYER_CHAR" 
             elif (( world_x % 20 == 0 && y == ground_y - 2 )); then
-                buffer+="\e[38;5;220m$COIN_CHAR" # Gold Coin
+                buffer+="\e[38;5;220m$COIN_CHAR"
             elif [[ $y -ge $ground_y ]]; then
-                buffer+="\e[38;5;239m▒" # Dithered Ground
+                buffer+="\e[38;5;240m▒"
             else
                 buffer+=" "
             fi
@@ -74,40 +77,46 @@ draw_frame() {
         buffer+="$RESET\n"
     done
     
-    # UI Section
-    buffer+="\e[7m SCORE: $SCORE | POS: $PLAYER_X | [W/A/S/D] MOVE | [Q] QUIT \e[0m\n"
-    # On-screen Arrows for Touch/Visual
-    buffer+="    [W] ↑    \n"
-    buffer+="[A] ←   [D] →\n"
-    buffer+="    [S] ↓    "
-    
     echo -ne "$buffer"
+    echo -e "\e[1m SCORE: $SCORE | X: $PLAYER_X Y: $PLAYER_Y \e[0m"
+    echo " [W] Jump | [A][D] Move | [S] Duck/Fall Fast | [Q] Quit"
 }
 
-# --- Game Loop ---
+# --- Main Loop ---
 while true; do
     draw_frame
 
-    # Gravity Logic
-    current_ground=${TERRAIN[$PLAYER_X]}
-    if (( PLAYER_Y < current_ground - 1 )); then
+    # 1. Gravity Logic (Only fall if space below is walkable)
+    if is_walkable "$PLAYER_X" "$((PLAYER_Y + 1))"; then
         ((PLAYER_Y++))
     fi
 
-    # Check for Coin Pickup
+    # 2. Check for Coin Pickup
+    current_ground=${TERRAIN[$PLAYER_X]}
     if (( PLAYER_X % 20 == 0 && PLAYER_Y == current_ground - 2 )); then
         ((SCORE++))
         play_sound
     fi
 
-    # Input (Ultra-short timeout for smoothness)
-    read -rsn3 -t 0.03 key
-    
+    # 3. Input with Collision Checks
+    read -rsn3 -t 0.04 key
     case "$key" in
-        $'\x1b[A'|[wW]) ((PLAYER_Y > 0)) && ((PLAYER_Y -= 3)) ;; # Higher Jump
-        $'\x1b[B'|[sS]) ((PLAYER_Y < GAME_HEIGHT)) && ((PLAYER_Y++)) ;;
-        $'\x1b[C'|[dD]) ((PLAYER_X++)) ;;
-        $'\x1b[D'|[aA]) ((PLAYER_X > 0)) && ((PLAYER_X--)) ;;
+        $'\x1b[A'|[wW]) # Jump: Check 3 spaces up
+            if is_walkable "$PLAYER_X" "$((PLAYER_Y - 3))"; then
+                ((PLAYER_Y -= 3))
+            fi ;;
+        $'\x1b[B'|[sS]) # Down: Only move down if it's not the floor
+            if is_walkable "$PLAYER_X" "$((PLAYER_Y + 1))"; then
+                ((PLAYER_Y++))
+            fi ;;
+        $'\x1b[C'|[dD]) # Right: Check if the ground at next X is higher than current Y
+            if is_walkable "$((PLAYER_X + 1))" "$PLAYER_Y"; then
+                ((PLAYER_X++))
+            fi ;;
+        $'\x1b[D'|[aA]) # Left
+            if (( PLAYER_X > 0 )) && is_walkable "$((PLAYER_X - 1))" "$PLAYER_Y"; then
+                ((PLAYER_X--))
+            fi ;;
         [qQ]) break ;;
     esac
 done
