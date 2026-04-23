@@ -4,6 +4,8 @@ echo "Expect bugs! To update, uninstall then re-install!"
 
 #!/bin/bash
 
+#!/bin/bash
+
 # --- Configuration ---
 WIDTH=$(tput cols); HEIGHT=$(tput lines)
 GAME_HEIGHT=$((HEIGHT - 8))
